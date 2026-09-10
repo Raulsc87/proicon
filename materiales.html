@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROICON - Materiales</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body class="body-dashboard">
+<div class="dashboard">
+    <aside class="menu">
+        <h2>PROICON</h2>
+        <p class="texto-usuario">Usuario:</p>
+        <p id="nombreUsuario" class="usuario"></p>
+        <nav><a href="principal.html">Inicio</a><a href="clientes.html">Clientes</a><a href="proveedores.html">Proveedores</a><a href="materiales.html" aria-current="page">Materiales</a></nav>
+        <button id="botonCerrarSesion">Cerrar sesión</button>
+    </aside>
+    <main class="contenido mantenimiento">
+        <h1>Materiales</h1>
+        <p class="subtitulo">Registro y consulta de materiales.</p>
+        <p id="mensajeModulo" class="mensaje" role="status" aria-live="polite"></p>
+        <div class="barra-mantenimiento">
+            <button id="nuevo" type="button">+ Nuevo material</button>
+            <form id="busqueda" class="busqueda">
+                <label for="buscar">Buscar por nombre o código</label>
+                <input id="buscar" type="search" maxlength="120">
+                <button type="submit">Buscar</button>
+            </form>
+        </div>
+        <section id="editor" class="panel-mantenimiento" hidden>
+            <h2 id="tituloEditor" tabindex="-1">Nuevo material</h2>
+            <form id="formulario">
+                <div id="camposFormulario" class="campos-mantenimiento">
+                    <div class="grupo"><label for="codigo">Código</label><input id="codigo" name="codigo" maxlength="40"></div>
+                    <div class="grupo"><label for="nombre">Nombre *</label><input id="nombre" name="nombre" maxlength="150" required></div>
+                    <div class="grupo"><label for="descripcion">Descripción</label><input id="descripcion" name="descripcion" maxlength="250"></div>
+                    <div class="grupo"><label for="id_unidad">Unidad de medida *</label><select id="id_unidad" name="id_unidad" required><option value="">Selecciona una unidad</option></select></div>
+                    <div class="grupo"><label for="estado">Estado</label><select id="estado" name="estado"><option>ACTIVO</option><option>INACTIVO</option></select></div>
+                </div>
+                <button id="guardar" type="submit">Guardar</button>
+                <button id="cancelar" type="button">Cerrar formulario</button>
+            </form>
+        </section>
+        <div class="tabla-contenedor panel-mantenimiento">
+            <table>
+                <caption class="solo-lectores">Lista de materiales</caption>
+                <thead><tr><th>Código</th><th>Nombre</th><th>Descripción</th><th>Unidad de medida</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody id="filas"></tbody>
+            </table>
+            <p id="estadoLista" role="status">Cargando materiales…</p>
+        </div>
+    </main>
+</div>
+<script src="principal.js"></script>
+<script src="mantenimiento.js"></script>
+<script src="materiales.js"></script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROICON - Clientes</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body class="body-dashboard">
+<div class="dashboard">
+    <aside class="menu">
+        <h2>PROICON</h2>
+        <p class="texto-usuario">Usuario:</p>
+        <p id="nombreUsuario" class="usuario"></p>
+        <nav><a href="principal.html">Inicio</a><a href="clientes.html" aria-current="page">Clientes</a><a href="proveedores.html">Proveedores</a><a href="materiales.html">Materiales</a></nav>
+        <button id="botonCerrarSesion">Cerrar sesión</button>
+    </aside>
+    <main class="contenido mantenimiento">
+        <h1>Clientes</h1>
+        <p class="subtitulo">Registro y consulta de clientes.</p>
+        <p id="mensajeModulo" class="mensaje" role="status" aria-live="polite"></p>
+        <div class="barra-mantenimiento">
+            <button id="nuevo" type="button">+ Nuevo cliente</button>
+            <form id="busqueda" class="busqueda">
+                <label for="buscar">Buscar por nombre o NIT</label>
+                <input id="buscar" type="search" maxlength="120">
+                <button type="submit">Buscar</button>
+            </form>
+        </div>
+        <section id="editor" class="panel-mantenimiento" hidden>
+            <h2 id="tituloEditor" tabindex="-1">Nuevo cliente</h2>
+            <form id="formulario">
+                <div id="camposFormulario" class="campos-mantenimiento">
+                    <div class="grupo"><label for="nombre">Nombre *</label><input id="nombre" name="nombre" maxlength="120" required></div>
+                    <div class="grupo"><label for="nit">NIT</label><input id="nit" name="nit" maxlength="20"></div>
+                    <div class="grupo"><label for="telefono">Teléfono</label><input id="telefono" name="telefono" maxlength="20"></div>
+                    <div class="grupo"><label for="correo">Correo</label><input id="correo" name="correo" type="email" maxlength="120"></div>
+                    <div class="grupo"><label for="direccion">Dirección</label><input id="direccion" name="direccion" maxlength="200"></div>
+                    <div class="grupo"><label for="estado">Estado</label><select id="estado" name="estado"><option>ACTIVO</option><option>INACTIVO</option></select></div>
+                </div>
+                <button id="guardar" type="submit">Guardar</button>
+                <button id="cancelar" type="button">Cerrar formulario</button>
+            </form>
+        </section>
+        <div class="tabla-contenedor panel-mantenimiento">
+            <table>
+                <caption class="solo-lectores">Lista de clientes</caption>
+                <thead><tr><th>Nombre</th><th>NIT</th><th>Teléfono</th><th>Correo</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody id="filas"></tbody>
+            </table>
+            <p id="estadoLista" role="status">Cargando clientes…</p>
+        </div>
+    </main>
+</div>
+<script src="principal.js"></script>
+<script src="mantenimiento.js"></script>
+<script src="clientes.js"></script>
+</body>
+</html>

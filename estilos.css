@@ -2,6 +2,26 @@
     box-sizing: border-box;
 }
 
+/* Mantenimientos: conserva los colores y la estructura del dashboard. */
+.mantenimiento { min-width: 0; }
+.barra-mantenimiento, .busqueda { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.barra-mantenimiento { justify-content: space-between; margin: 24px 0; }
+.mantenimiento button { border: 0; border-radius: 7px; padding: 10px 14px; background: #2563eb; color: white; cursor: pointer; }
+.mantenimiento button:hover { background: #1d4ed8; }
+.mantenimiento button:disabled { opacity: .6; cursor: wait; }
+.mantenimiento input, .mantenimiento select { padding: 12px; border: 1px solid #d1d5db; border-radius: 7px; font: inherit; }
+.mantenimiento select { width: 100%; }
+.panel-mantenimiento { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(0,0,0,.08); }
+.campos-mantenimiento { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
+.tabla-contenedor { overflow-x: auto; }
+.mantenimiento table { width: 100%; border-collapse: collapse; text-align: left; }
+.mantenimiento th, .mantenimiento td { padding: 12px; border-bottom: 1px solid #e5e7eb; overflow-wrap: anywhere; }
+.mantenimiento th { color: #374151; }
+.acciones { min-width: 240px; }
+.acciones button { margin: 3px; }
+.solo-lectores { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media (max-width: 650px) { .campos-mantenimiento { grid-template-columns: 1fr; } }
+
 html,
 body {
     margin: 0;
