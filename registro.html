@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>PROICON - Crear cuenta</title>
+
+    <link
+        rel="stylesheet"
+        href="estilos.css"
+    >
+
+</head>
+
+<body class="registro-body">
+
+    <div class="registro-contenedor">
+
+        <div class="registro-logo">
+
+            <h1>PROICON</h1>
+
+            <p>
+                Gestión de Proyectos de Construcción
+            </p>
+
+        </div>
+
+        <div class="registro-tarjeta">
+
+            <h2>Crear cuenta</h2>
+
+            <p class="registro-descripcion">
+                Completa tus datos para registrarte
+            </p>
+
+            <form id="formularioRegistro">
+
+                <div class="grupo">
+
+                    <label for="nombre">
+                        Nombre completo
+                    </label>
+
+                    <input
+                        type="text"
+                        id="nombre"
+                        placeholder="Ingresa tu nombre"
+                    >
+
+                </div>
+
+                <div class="grupo">
+
+                    <label for="correo">
+                        Correo electrónico
+                    </label>
+
+                    <input
+                        type="email"
+                        id="correo"
+                        placeholder="ejemplo@correo.com"
+                    >
+
+                </div>
+
+                <div class="grupo">
+
+                    <label for="contrasena">
+                        Contraseña
+                    </label>
+
+                    <input
+                        type="password"
+                        id="contrasena"
+                        placeholder="Mínimo 6 caracteres"
+                    >
+
+                </div>
+
+                <div class="grupo">
+
+                    <label for="confirmarContrasena">
+                        Confirmar contraseña
+                    </label>
+
+                    <input
+                        type="password"
+                        id="confirmarContrasena"
+                        placeholder="Repite tu contraseña"
+                    >
+
+                </div>
+
+                <p
+                    id="mensaje"
+                    class="mensaje"
+                ></p>
+
+                <button
+                    type="submit"
+                    class="boton-registro"
+                >
+                    Crear cuenta
+                </button>
+
+            </form>
+
+            <div class="login-enlace">
+
+                <span>
+                    ¿Ya tienes una cuenta?
+                </span>
+
+                <a href="index.html">
+                    Iniciar sesión
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="registro.js"></script>
+
+</body>
+
+</html>
+
+

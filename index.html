@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>PROICON - Iniciar sesión</title>
+
+    <link rel="stylesheet" href="estilos.css">
+</head>
+
+<body class="login-body">
+
+    <div class="login-contenedor">
+
+        <div class="login-logo">
+            <h1>PROICON</h1>
+            <p>Gestión de Proyectos de Construcción</p>
+        </div>
+
+        <div class="login-tarjeta">
+
+            <h2>Iniciar sesión</h2>
+
+            <p class="login-descripcion">
+                Ingresa tus datos para acceder al sistema
+            </p>
+
+            <form id="formularioLogin">
+
+                <div class="grupo">
+                    <label for="correo">
+                        Correo electrónico
+                    </label>
+
+                    <input
+                        type="email"
+                        id="correo"
+                        placeholder="ejemplo@correo.com"
+                    >
+                </div>
+
+                <div class="grupo">
+                    <label for="contrasena">
+                        Contraseña
+                    </label>
+
+                    <input
+                        type="password"
+                        id="contrasena"
+                        placeholder="Ingresa tu contraseña"
+                    >
+                </div>
+
+                <p id="mensaje" class="mensaje"></p>
+
+                <button type="submit" class="boton-login">
+                    Iniciar sesión
+                </button>
+
+            </form>
+
+            <div class="registro-enlace">
+                <span>¿No tienes una cuenta?</span>
+                <a href="registro.html">
+                    Crear cuenta
+                </a>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="login.js"></script>
+
+</body>
+</html>
