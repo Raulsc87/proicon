@@ -29,14 +29,15 @@
             <form id="formularioLogin">
 
                 <div class="grupo">
-                    <label for="correo">
-                        Correo electrónico
+                    <label for="usuario">
+                        Usuario
                     </label>
 
                     <input
-                        type="email"
-                        id="correo"
-                        placeholder="ejemplo@correo.com"
+                        type="text"
+                        id="usuario"
+                        autocomplete="username"
+                        placeholder="Ingresa tu usuario"
                     >
                 </div>
 
@@ -48,6 +49,7 @@
                     <input
                         type="password"
                         id="contrasena"
+                        autocomplete="current-password"
                         placeholder="Ingresa tu contraseña"
                     >
                 </div>

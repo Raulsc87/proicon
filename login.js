@@ -1,47 +1,37 @@
 const formularioLogin = document.getElementById("formularioLogin");
 const mensaje = document.getElementById("mensaje");
+const botonLogin = formularioLogin.querySelector('button[type="submit"]');
 
-formularioLogin.addEventListener("submit", function (evento) {
-
+formularioLogin.addEventListener("submit", async function (evento) {
     evento.preventDefault();
-
-    const correo = document.getElementById("correo").value.trim();
+    if (botonLogin.disabled) return;
+    const usuario = document.getElementById("usuario").value.trim();
     const contrasena = document.getElementById("contrasena").value;
-
     mensaje.className = "mensaje error";
-
-    if (correo === "" || contrasena === "") {
+    if (usuario === "" || contrasena === "") {
         mensaje.textContent = "Completa todos los campos.";
         return;
     }
-
-    const usuarios =
-        JSON.parse(localStorage.getItem("usuarios")) || [];
-
-    const usuarioEncontrado = usuarios.find(function (usuario) {
-
-        return (
-            usuario.correo === correo &&
-            usuario.contrasena === contrasena
-        );
-
-    });
-
-    if (!usuarioEncontrado) {
-        mensaje.textContent = "Correo o contraseña incorrectos.";
-        return;
-    }
-
-    localStorage.setItem(
-        "usuarioActivo",
-        JSON.stringify(usuarioEncontrado)
-    );
-
-    mensaje.className = "mensaje correcto";
-    mensaje.textContent = "Inicio de sesión correcto.";
-
-    setTimeout(function () {
+    botonLogin.disabled = true;
+    mensaje.textContent = "";
+    try {
+        const respuesta = await fetch("api/login.php", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ usuario, contrasena })
+        });
+        const datos = await respuesta.json();
+        if (!respuesta.ok || datos.ok !== true) {
+            mensaje.textContent = datos.mensaje || "No se pudo iniciar sesión.";
+            return;
+        }
+        mensaje.className = "mensaje correcto";
+        mensaje.textContent = "Inicio de sesión correcto.";
         window.location.href = "principal.html";
-    }, 1000);
-
+    } catch (error) {
+        mensaje.textContent = "No se pudo conectar con el servidor. Intenta nuevamente.";
+    } finally {
+        botonLogin.disabled = false;
+    }
 });
