@@ -1,0 +1,18 @@
+.adquisiciones { min-width: 0; }
+.adquisiciones .tabla-contenedor { max-width: 100%; overflow-x: auto; }
+.adquisiciones table { min-width: 650px; }
+.adquisiciones th { white-space: nowrap; }
+.adquisiciones td { vertical-align: middle; }
+.adquisiciones .importe, .adquisiciones .cantidad { white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+.adquisiciones .acciones { white-space: nowrap; }
+.adquisiciones .resumen { display: flex; gap: 20px; flex-wrap: wrap; padding: 18px; border-radius: 8px; background: #f3f4f6; margin-top: 18px; }
+.adquisiciones .resumen p { margin: 0; }
+.adquisiciones .resumen strong { display: block; margin-top: 6px; font-size: 22px; }
+.adquisiciones .aviso { padding: 12px; border-left: 3px solid #6b7280; background: #f3f4f6; white-space: pre-wrap; }
+.adquisiciones .ruta { display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0; }
+.adquisiciones dialog { width: min(720px, calc(100% - 32px)); max-height: 90vh; overflow: auto; border: 1px solid #d1d5db; border-radius: 12px; padding: 24px; box-sizing: border-box; }
+.adquisiciones dialog::backdrop { background: rgb(17 24 39 / 45%); }
+.adquisiciones dialog h2 { margin-top: 0; }
+.adquisiciones .datos-proyecto dd { min-width: 0; }
+.adquisiciones button:focus-visible, .adquisiciones a:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+@media (max-width: 700px) { .adquisiciones dialog { padding: 16px; } .adquisiciones .resumen { gap: 14px; } }
