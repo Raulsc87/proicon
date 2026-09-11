@@ -60,7 +60,7 @@ function iniciarMantenimiento(config) {
                         } else {
                             if (!confirm(accion + " este registro?")) return;
                             const resultado = await solicitar("estado", { id: registro[config.id], estado: accion === "Desactivar" ? "INACTIVO" : "ACTIVO" });
-                            editor.hidden = true;
+                            cerrar();
                             informar(resultado.mensaje);
                             await listar();
                         }
@@ -96,6 +96,8 @@ function iniciarMantenimiento(config) {
         informar("");
     }
 
+    function cerrar() { editor.hidden = true; formulario.reset(); idActual = null; }
+
     async function operar(operacion) {
         if (ocupado) return;
         ocupado = true;
@@ -106,7 +108,7 @@ function iniciarMantenimiento(config) {
     }
 
     document.getElementById("nuevo").addEventListener("click", () => { if (!ocupado) abrir(); });
-    document.getElementById("cancelar").addEventListener("click", () => { if (!ocupado) editor.hidden = true; });
+    document.getElementById("cancelar").addEventListener("click", () => { if (!ocupado) cerrar(); });
     document.getElementById("busqueda").addEventListener("submit", evento => { evento.preventDefault(); listar(); });
     formulario.addEventListener("submit", evento => {
         evento.preventDefault();
@@ -114,7 +116,7 @@ function iniciarMantenimiento(config) {
             const datos = Object.fromEntries(new FormData(formulario));
             if (idActual !== null) datos.id = idActual;
             const resultado = await solicitar(idActual === null ? "crear" : "editar", datos);
-            editor.hidden = true;
+            cerrar();
             informar(resultado.mensaje);
             await listar();
         });

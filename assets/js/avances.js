@@ -34,7 +34,7 @@
     }
     function boton(txt, fn, parent) { const b = n('button', txt); b.type = 'button'; b.addEventListener('click', () => operar(fn)); parent.append(b); return b; }
     function campo(name, label, type = 'text', extra = {}) { return {name, label, type, ...extra}; }
-    function dialogo(titulo, campos, valores = {}, guardar = null) {
+    function dialogo(titulo, campos, valores = {}, guardar = null, padre = actividades) {
         const d = n('dialog'), h = n('h2', titulo), f = n('form'), grid = n('fieldset', '', 'campos-mantenimiento'), status = n('p', '', 'mensaje');
         h.id = 'tituloDialogoAvance'; d.setAttribute('aria-labelledby', h.id); status.setAttribute('role', 'status');
         for (const c of campos) {
@@ -57,9 +57,10 @@
         f.addEventListener('submit', e => { e.preventDefault(); operar(async () => {
             const fd = new FormData(f), archivo = fd.get('archivo');
             if (archivo instanceof File && archivo.size > 2 * 1024 * 1024) throw new Error('La imagen supera los 2 MB.');
-            await guardar(fd); d.close(); mensaje.textContent = 'Cambios guardados.'; mensaje.className = 'mensaje correcto';
+            await guardar(fd); f.reset(); d.close();
+            if (padre === actividades) { mensaje.textContent = 'Cambios guardados.'; mensaje.className = 'mensaje correcto'; }
         }); });
-        d.append(h, f); actividades.append(d); d.showModal();
+        d.append(h, f); padre.append(d); d.showModal();
         f.querySelector('input:not(:disabled), select:not(:disabled), textarea:not(:disabled)')?.focus({preventScroll: true});
         f.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest'});
     }
@@ -92,13 +93,33 @@
         nueva.disabled = false;
     }
     evidencia.append(n('h2', 'Evidencia fotográfica'));
-    const subir = boton('+ Subir foto', () => dialogo('Subir fotografía de avance', [campo('archivo', 'Imagen (máximo 2 MB)', 'file', {required: true}), campo('descripcion', 'Descripción', 'textarea', {maxLength: 250})], {}, async fd => { await api('foto_subir', fd); await cargarFotos(true); desplegable.open = true; }), evidencia); subir.disabled = true;
+    const subir = boton('+ Subir foto', () => dialogo('Subir fotografía de avance', [campo('archivo', 'Imagen (máximo 2 MB)', 'file', {required: true}), campo('descripcion', 'Descripción', 'textarea', {maxLength: 250})], {}, fd => guardarFoto('foto_subir', fd, 'Fotografía subida.'), evidencia), evidencia); subir.disabled = true;
     evidencia.append(n('p', 'La fecha y el usuario se registran automáticamente.'));
     const desplegable = n('details'), sum = n('summary', 'Ver fotografías del proyecto'), galeria = n('div', '', 'galeria-avance'), estadoFotos = n('p');
     estadoFotos.setAttribute('role', 'status');
     desplegable.append(sum, estadoFotos, galeria); evidencia.append(desplegable);
     const mas = boton('Cargar más fotografías', () => cargarFotos(), desplegable); mas.hidden = true;
-    function imagenUrl(id) { return 'api/avances.php?' + new URLSearchParams({accion: 'imagen', id_proyecto: pid, id_fotografia: id}); }
+    let revisionFotos = 0;
+    function imagenUrl(id) { return 'api/avances.php?' + new URLSearchParams({accion: 'imagen', id_proyecto: pid, id_fotografia: id, v: revisionFotos}); }
+    async function guardarFoto(accion, datos, texto) {
+        const r = await api(accion, datos);
+        // La escritura ya terminó: un fallo posterior de lectura no debe invitar a repetirla.
+        revisionFotos++;
+        try {
+            const visibles = galeria.children.length;
+            await cargarFotos(true);
+            while (siguiente && galeria.children.length < visibles) await cargarFotos();
+            estadoFotos.className = 'mensaje correcto';
+            estadoFotos.textContent = r.aviso || texto;
+        } catch {
+            fotosCargadas = false;
+            mas.hidden = false;
+            mas.textContent = 'Actualizar fotografías';
+            estadoFotos.className = 'mensaje error';
+            estadoFotos.textContent = texto + ' No se pudo actualizar la galería. Presiona Actualizar fotografías.';
+        }
+        desplegable.open = true;
+    }
     async function verFoto(f) {
         const d = n('dialog', '', 'visor-foto'), h = n('h2', 'Consultar fotografía'), img = n('img');
         img.src = imagenUrl(f.id_fotografia); img.alt = f.descripcion || 'Fotografía de avance';
@@ -109,20 +130,17 @@
     function editarFoto(f) {
         dialogo('Editar fotografía de avance', [campo('descripcion', 'Descripción', 'textarea', {maxLength: 250}), campo('fecha_carga', 'Fecha de carga', 'date', {required: true}), campo('archivo', 'Reemplazar imagen (opcional, máximo 2 MB)', 'file')], f, async fd => {
             fd.set('id_fotografia', f.id_fotografia);
-            const r = await api('foto_editar', fd);
-            await cargarFotos(true);
-            estadoFotos.textContent = r.aviso || 'Fotografía actualizada.';
-        });
+            await guardarFoto('foto_editar', fd, 'Fotografía actualizada.');
+        }, evidencia);
     }
     async function eliminarFoto(f) {
         if (!confirm('¿Desea eliminar esta fotografía de avance?')) return;
         try {
-            const r = await api('foto_eliminar', {id_fotografia: f.id_fotografia});
-            await cargarFotos(true);
-            estadoFotos.textContent = r.aviso || 'Fotografía eliminada. La bitácora se conserva.';
-        } catch (e) { estadoFotos.textContent = e.message; }
+            await guardarFoto('foto_eliminar', {id_fotografia: f.id_fotografia}, 'Fotografía eliminada. La bitácora se conserva.');
+        } catch (e) { estadoFotos.className = 'mensaje error'; estadoFotos.textContent = e.message; }
     }
     async function cargarFotos(reiniciar = false) {
+        reiniciar = reiniciar || !fotosCargadas;
         const r = await api('fotos_listar', null, !reiniciar && siguiente ? {antes: siguiente} : {});
         if (reiniciar) galeria.replaceChildren();
         for (const f of r.fotos) {
@@ -134,7 +152,7 @@
             boton('Eliminar', () => eliminarFoto(f), card);
             galeria.append(card);
         }
-        fotosCargadas = true; siguiente = r.siguiente; mas.hidden = !siguiente; estadoFotos.textContent = galeria.children.length ? '' : 'Todavía no hay fotografías.';
+        fotosCargadas = true; siguiente = r.siguiente; mas.hidden = !siguiente; mas.textContent = 'Cargar más fotografías'; estadoFotos.className = 'mensaje'; estadoFotos.textContent = galeria.children.length ? '' : 'Todavía no hay fotografías.';
     }
     desplegable.addEventListener('toggle', () => { if (desplegable.open && !fotosCargadas) operar(() => cargarFotos(true)); });
     operar(async () => {

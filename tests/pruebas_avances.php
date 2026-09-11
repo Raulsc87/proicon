@@ -9,6 +9,9 @@ function va_http(string $ruta, ?string $body = null, string $tipo = 'application
     global $sesion;
     $op = ['method' => $body === null ? 'GET' : 'POST', 'ignore_errors' => true, 'timeout' => 20, 'header' => "Content-Type: $tipo\r\n" . ($auth ? "Cookie: PHPSESSID=$sesion\r\n" : '')]; if ($body !== null) $op['content'] = $body;
     $texto = file_get_contents('http://localhost:8000/' . $ruta, false, stream_context_create(['http' => $op]));
+    if ($auth) foreach ($http_response_header as $h) {
+        if (preg_match('/^Set-Cookie: PHPSESSID=([a-zA-Z0-9,-]+)/i', $h, $cookie)) $sesion = $cookie[1];
+    }
     preg_match('/\s(\d{3})\s/', $http_response_header[0] ?? '', $m);
     return [(int) ($m[1] ?? 0), $texto];
 }

@@ -70,5 +70,11 @@
         opciones('estado_empleado', c.estados_empleado); opciones('estado_presupuesto', c.estados_presupuesto);
         opciones('id_categoria_costo', c.categorias, 'id_categoria_costo', 'nombre'); opciones('id_material', c.materiales, 'id_material', 'nombre', true);
         await Promise.all([cargarEmpleados(), cargarPresupuestos()]); el('centroProyecto').hidden = false;
+        const seleccionado = new URLSearchParams(location.search).get('presupuesto');
+        if (seleccionado !== null) {
+            if (!presupuestos.some(p => String(p.id_presupuesto) === seleccionado)) throw new Error('El presupuesto no pertenece a este proyecto o ya no está disponible.');
+            await cargarDetalles(seleccionado);
+            el('detallePresupuesto').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'});
+        }
     });
 })();

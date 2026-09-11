@@ -5,7 +5,10 @@ const Proicon = (() => {
         el('mensajeModulo').className = 'mensaje ' + (error ? 'error' : 'correcto');
     }
     async function api(accion, datos = null, parametros = {}) {
-        const respuesta = await fetch('api/proyectos_' + accion + '.php?' + new URLSearchParams(parametros), {
+        return solicitar('api/proyectos_' + accion + '.php?' + new URLSearchParams(parametros), datos);
+    }
+    async function solicitar(url, datos = null) {
+        const respuesta = await fetch(url, {
             method: datos ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
             ...(datos ? {headers: {'Content-Type': 'application/json'}, body: JSON.stringify(datos)} : {})
         });
@@ -51,6 +54,7 @@ const Proicon = (() => {
             for (const campo of campos) {
                 const td = document.createElement('td');
                 td.textContent = (typeof campo === 'function' ? campo(r) : r[campo]) ?? '—';
+                if (td.textContent.startsWith('Q\u00a0')) td.classList.add('importe');
                 tr.append(td);
             }
             const td = document.createElement('td'); td.className = 'acciones';
@@ -62,14 +66,14 @@ const Proicon = (() => {
         }
         el(id + 'Estado').textContent = registros.length ? registros.length + ' registros.' : 'No se encontraron registros.';
     }
-    function enviar(id, fn) { el(id + 'Form').addEventListener('submit', e => { e.preventDefault(); operar(() => fn(Object.fromEntries(new FormData(e.target)))); }); }
-    document.querySelectorAll('[data-cerrar]').forEach(b => b.addEventListener('click', () => { el(b.dataset.cerrar).hidden = true; }));
+    function enviar(id, fn) { el(id + 'Form').addEventListener('submit', e => { e.preventDefault(); operar(async () => { await fn(Object.fromEntries(new FormData(e.target))); e.target.reset(); }); }); }
+    document.querySelectorAll('[data-cerrar]').forEach(b => b.addEventListener('click', () => { if (!ocupado) { el(b.dataset.cerrar).hidden = true; b.closest('form').reset(); } }));
     // Formato decimal exacto: evita convertir los importes NUMERIC a coma flotante.
     function dinero(valor) {
         const [entero, fraccion = ''] = String(valor).split('.');
         const centavos = BigInt(entero) * 100n + BigInt(fraccion.padEnd(3, '0').slice(0, 2)) + (Number(fraccion[2] || 0) >= 5 ? 1n : 0n);
-        return 'Q ' + (centavos / 100n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '.' + (centavos % 100n).toString().padStart(2, '0');
+        return 'Q\u00a0' + (centavos / 100n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '.' + (centavos % 100n).toString().padStart(2, '0');
     }
     function hoy() { const d = new Date(); return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-'); }
-    return {el, informar, api, operar, opciones, abrir, tabla, enviar, dinero, hoy};
+    return {el, informar, api, solicitar, operar, opciones, abrir, tabla, enviar, dinero, hoy};
 })();

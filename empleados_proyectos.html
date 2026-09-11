@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROICON - Empleados asignados</title>
+    <link rel="stylesheet" href="assets/css/estilos.css">
+    <link rel="stylesheet" href="assets/css/proyectos.css">
+    <link rel="stylesheet" href="assets/css/resumenes_proyectos.css">
+</head>
+<body class="body-dashboard">
+<div class="dashboard">
+    <aside class="menu">
+        <h2>PROICON</h2>
+        <p class="texto-usuario">Usuario:</p>
+        <p id="nombreUsuario" class="usuario"></p>
+        <nav>
+            <a href="principal.html">Inicio</a>
+            <a href="clientes.html">Clientes</a>
+            <a href="proveedores.html">Proveedores</a>
+            <a href="materiales.html">Materiales</a>
+            <a href="proyectos.html">Proyectos</a>
+        </nav>
+        <button id="botonCerrarSesion">Cerrar sesión</button>
+    </aside>
+    <main class="contenido mantenimiento resumen-proyectos" data-resumen="empleados">
+        <h1>Empleados asignados</h1>
+        <p class="subtitulo">Consulta el personal asignado a cada proyecto. El estado corresponde a la asignación, no al estado laboral del empleado.</p>
+        <p id="mensajeModulo" class="mensaje" role="status" aria-live="polite"></p>
+        <div class="barra-mantenimiento">
+            <a href="principal.html">Volver al Panel de Control</a>
+            <button id="actualizarResumen" type="button">Actualizar</button>
+        </div>
+        <section class="panel-mantenimiento">
+            <div id="tablaResumen" class="tabla-contenedor" role="region" aria-label="Empleados asignados" tabindex="0" aria-busy="true">
+                <table>
+                    <caption class="solo-lectores">Empleados asignados de todos los proyectos</caption>
+                    <thead><tr><th scope="col">Proyecto</th><th scope="col">Empleado</th><th scope="col">Función en proyecto</th><th scope="col">Fecha asignación</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead>
+                    <tbody id="filas"></tbody>
+                </table>
+            </div>
+            <p id="filasEstado" role="status">Cargando…</p>
+        </section>
+    </main>
+</div>
+<script src="assets/js/principal.js"></script>
+<script src="assets/js/proyectos_comun.js"></script>
+<script src="assets/js/resumenes_proyectos.js"></script>
+</body>
+</html>

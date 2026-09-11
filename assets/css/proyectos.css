@@ -11,6 +11,7 @@
 .mantenimiento table { width: 100%; border-collapse: collapse; margin-top: 15px; }
 .mantenimiento th, .mantenimiento td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; overflow-wrap: anywhere; }
 .mantenimiento th { background: #f3f4f6; }
+.mantenimiento td.importe { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .acciones { min-width: 180px; }
 .datos-proyecto { display: grid; grid-template-columns: minmax(120px, 1fr) 3fr; gap: 12px; }
 .datos-proyecto dt { font-weight: bold; }

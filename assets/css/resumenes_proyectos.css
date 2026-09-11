@@ -1,0 +1,7 @@
+.resumen-proyectos table { min-width: 850px; }
+.resumen-proyectos th { white-space: nowrap; }
+.resumen-proyectos td:first-child { min-width: 220px; }
+.resumen-proyectos td { vertical-align: middle; }
+.resumen-proyectos .acciones a { display: inline-block; margin: 5px 12px 5px 0; white-space: nowrap; }
+.resumen-proyectos .avance-resumen { white-space: nowrap; min-width: 160px; }
+.resumen-proyectos progress { display: block; width: 100%; height: 16px; margin-top: 8px; accent-color: #2563eb; }

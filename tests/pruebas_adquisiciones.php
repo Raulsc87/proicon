@@ -2,7 +2,7 @@
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 ini_set('session.use_cookies', '0'); session_cache_limiter('');
 $marca = 'ADQ_' . bin2hex(random_bytes(8));
-$sesion = bin2hex(random_bytes(24)); $db = null; $uid = null; $sid = null; $fallo = false; $originales = []; $archivos = [];
+$sesion = bin2hex(random_bytes(24)); $db = null; $uid = null; $sid = null; $fallo = false; $originales = []; $archivos = []; $proyectoTemporal = null;
 function aq(PDO $db, string $sql, array $p = []): PDOStatement { $q = $db->prepare($sql); $q->execute($p); return $q; }
 function ok(bool $v, string $m): void { if (!$v) throw new RuntimeException($m); echo "OK: $m\n"; }
 function http_adq(string $ruta, string $metodo = 'GET', ?string $body = null, string $tipo = 'application/json', bool $auth = true): array {
@@ -10,10 +10,13 @@ function http_adq(string $ruta, string $metodo = 'GET', ?string $body = null, st
     $o = ['method' => $metodo, 'ignore_errors' => true, 'timeout' => 20, 'header' => "Content-Type: $tipo\r\n" . ($auth ? "Cookie: PHPSESSID=$sesion\r\n" : '')];
     if ($body !== null) $o['content'] = $body;
     $texto = file_get_contents('http://localhost:8000/' . $ruta, false, stream_context_create(['http' => $o]));
+    if ($auth) foreach ($http_response_header as $h) {
+        if (preg_match('/^Set-Cookie: PHPSESSID=([a-zA-Z0-9,-]+)/i', $h, $cookie)) $sesion = $cookie[1];
+    }
     preg_match('/\s(\d{3})\s/', $http_response_header[0] ?? '', $m);
     return [(int) ($m[1] ?? 0), $texto, $http_response_header];
 }
-function adq(string $a, ?array $d = null, array $get = [], bool $auth = true, ?array $file = null): array {
+function adq(string $a, ?array $d = null, array $get = [], bool $auth = true, ?array $file = null, string $endpoint = 'adquisiciones'): array {
     $tipo = 'application/json'; $body = $d === null ? null : json_encode($d);
     if ($file !== null) {
         $boundary = 'Boundary' . bin2hex(random_bytes(12)); $body = '';
@@ -21,22 +24,34 @@ function adq(string $a, ?array $d = null, array $get = [], bool $auth = true, ?a
         if ($file) $body .= "--$boundary\r\nContent-Disposition: form-data; name=\"archivo\"; filename=\"{$file[0]}\"\r\nContent-Type: {$file[1]}\r\n\r\n{$file[2]}\r\n";
         $body .= "--$boundary--\r\n"; $tipo = 'multipart/form-data; boundary=' . $boundary;
     }
-    [$s, $t] = http_adq('api/adquisiciones.php?' . http_build_query(['accion' => $a] + $get), $d === null ? 'GET' : 'POST', $body, $tipo, $auth);
+    [$s, $t] = http_adq('api/' . $endpoint . '.php?' . http_build_query(['accion' => $a] + $get), $d === null ? 'GET' : 'POST', $body, $tipo, $auth);
     return [$s, json_decode($t, true, 512, JSON_THROW_ON_ERROR)];
 }
 try {
     ob_start(); require __DIR__ . '/../config/database.local.php'; ob_end_clean(); $db = $conexion; $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     ok(extension_loaded('fileinfo'), 'fileinfo nativo disponible');
-    foreach (['solicitud_material', 'detalle_solicitud', 'compra', 'detalle_compra', 'factura', 'pago', 'usuario', 'cliente', 'proveedor', 'material', 'proyecto', 'proyecto_empleado', 'presupuesto', 'detalle_presupuesto'] as $tabla) $originales[$tabla] = aq($db, "SELECT row_to_json(t)::text AS r FROM $tabla t ORDER BY r")->fetchAll(PDO::FETCH_COLUMN);
+    foreach (['solicitud_material', 'detalle_solicitud', 'compra', 'detalle_compra', 'factura', 'pago', 'usuario', 'cliente', 'proveedor', 'material', 'proyecto', 'proyecto_empleado', 'presupuesto', 'detalle_presupuesto', 'actividad', 'bitacora', 'fotografia_avance'] as $tabla) $originales[$tabla] = aq($db, "SELECT row_to_json(t)::text AS r FROM $tabla t ORDER BY r")->fetchAll(PDO::FETCH_COLUMN);
     $base = aq($db, 'SELECT id_empleado, id_rol FROM usuario ORDER BY id_usuario LIMIT 1')->fetch(PDO::FETCH_ASSOC);
     $clave = bin2hex(random_bytes(24));
     $uid = aq($db, "INSERT INTO usuario (nombre_usuario, contrasena, estado, id_empleado, id_rol) VALUES (:nombre, :clave, 'ACTIVO', :empleado, :rol) RETURNING id_usuario", ['nombre' => $marca, 'clave' => $clave, 'empleado' => $base['id_empleado'], 'rol' => $base['id_rol']])->fetchColumn();
     session_id($sesion); session_start(); session_write_close();
+    [$s] = http_adq('api/login.php'); ok($s === 405, 'login exige POST');
+    foreach (['{', 'null', '{"usuario":[],"contrasena":"x"}'] as $entrada) {
+        [$s, $t] = http_adq('api/login.php', 'POST', $entrada); ok($s === 400 && !json_decode($t, true)['ok'], 'login rechaza entrada malformada sin error interno');
+    }
+    [$s] = http_adq('tests/prueba_conexion.php'); ok($s === 404, 'diagnóstico de conexión no se expone por HTTP');
+    $sesionInicial = $sesion;
     [$s] = http_adq('api/login.php', 'POST', json_encode(['usuario' => $marca, 'contrasena' => 'incorrecta'])); ok($s === 401, 'login rechaza contraseña incorrecta');
     [$s, $t] = http_adq('api/login.php', 'POST', json_encode(['usuario' => $marca, 'contrasena' => $clave])); ok($s === 200 && json_decode($t, true)['ok'], 'login real con usuario temporal');
     unset($clave);
+    ok($sesionInicial !== $sesion, 'login renueva identificador de sesión');
     [$s, $t] = http_adq('api/sesion.php'); ok($s === 200 && json_decode($t, true)['activa'], 'sesión activa después del login');
-    $pid = aq($db, 'SELECT id_proyecto FROM proyecto ORDER BY id_proyecto LIMIT 1')->fetchColumn();
+    [$s, $t] = http_adq('api/proyectos_catalogos.php'); ok($s === 200, 'catálogos para flujo completo'); $pc = json_decode($t, true)['datos'];
+    $proyecto = ['codigo' => $marca, 'nombre' => $marca, 'id_cliente' => $pc['clientes'][0]['id_cliente'], 'estado' => $pc['estados'][0], 'estado_avance' => $pc['avances'][0], 'fecha_inicio' => '2026-09-01', 'fecha_fin_estimada' => '2026-12-31'];
+    [$s, $t] = http_adq('api/proyectos_crear.php', 'POST', json_encode($proyecto)); ok($s === 201, 'flujo: crear proyecto temporal desde API'); $pid = $proyectoTemporal = json_decode($t, true)['datos']['id_proyecto'];
+    [$s] = http_adq('api/proyectos_presupuestos_crear.php', 'POST', json_encode(['id_proyecto' => $pid, 'version' => 1, 'fecha_registro' => '2026-09-10', 'estado' => 'BORRADOR'])); ok($s === 201, 'flujo: presupuesto BORRADOR del proyecto');
+    [$s, $r] = adq('listar', null, ['id_proyecto' => $pid], true, null, 'avances'); ok($s === 200, 'catálogos de actividad');
+    [$s] = adq('crear', ['id_proyecto' => $pid, 'nombre' => $marca, 'estado' => $r['datos']['estados'][0], 'situacion_tiempo' => $r['datos']['situaciones'][0], 'porcentaje_avance' => '0'], [], true, null, 'avances'); ok($s === 201, 'flujo: actividad del proyecto');
     $ctx = ['id_proyecto' => $pid];
     $reads = ['catalogos', 'solicitudes_listar', 'solicitudes_obtener', 'compras_obtener', 'facturas_obtener', 'archivo'];
     $writes = ['solicitudes_crear', 'solicitudes_revisar', 'solicitud_detalle_guardar', 'solicitud_detalle_quitar', 'compras_crear', 'compra_detalle_guardar', 'compras_estado', 'facturas_crear', 'pagos_crear'];
@@ -49,6 +64,7 @@ try {
     $sd = $ctx + ['codigo' => $marca, 'fecha_solicitud' => '2026-09-10', 'fecha_necesaria' => '2026-10-01', 'estado' => $cat['estados_solicitud'][0], 'solicitada_por' => 2147483647, 'revisada_por' => 2147483647, 'id_actividad' => 2147483647];
     [$s] = adq('solicitudes_crear', array_replace($sd, ['estado' => 'INVENTADO'])); ok($s === 400, 'rechaza estado inventado');
     [$s] = adq('solicitudes_crear', array_replace($sd, ['fecha_solicitud' => '2026-02-30'])); ok($s === 400, 'rechaza fecha inválida');
+    [$s] = adq('solicitudes_crear', array_replace($sd, ['fecha_necesaria' => '2026-09-01'])); ok($s === 400, 'rechaza fecha necesaria anterior a solicitud');
     [$s, $r] = adq('solicitudes_crear', $sd); ok($s === 201, 'crear solicitud temporal'); $sid = $r['datos']['id_solicitud'];
     ok((int) $r['datos']['solicitada_por'] === (int) $uid && $r['datos']['revisada_por'] === null && $r['datos']['id_actividad'] === null, 'autor de sesión y campos opcionales NULL');
     $sc = $ctx + ['id_solicitud' => $sid];
@@ -108,6 +124,8 @@ try {
     }
     [$s] = adq('solicitudes_crear', null, $ctx); ok($s === 405, 'valida método HTTP');
     foreach (['solicitud_detalle.html', 'compra_detalle.html', 'factura_detalle.html', 'proyecto_detalle.html'] as $pagina) { [$s, $t] = http_adq($pagina); ok($s === 200 && str_contains($t, 'adquisiciones.js'), "$pagina disponible"); }
+    [$s, $r] = adq('foto_subir', $ctx + ['descripcion' => $marca], [], true, ['temporal.png', 'image/png', $png], 'avances'); ok($s === 201, 'flujo: fotografía tras pago completo'); $archivos[] = $r['datos']['ruta_archivo'];
+    ok((int) aq($db, 'SELECT id_proyecto FROM bitacora WHERE id_bitacora=:id', ['id' => $r['datos']['id_bitacora']])->fetchColumn() === (int) $pid, 'flujo: fotografía ligada al mismo proyecto mediante bitácora');
     [$s] = http_adq('api/logout.php', 'POST'); ok($s === 200, 'cerrar sesión');
     [$s, $t] = http_adq('api/sesion.php'); ok($s === 200 && !json_decode($t, true)['activa'], 'sesión cerrada');
 } catch (Throwable $e) {
@@ -124,10 +142,14 @@ try {
                 $archivos = array_merge($archivos, $rutas);
                 foreach (['DELETE FROM pago WHERE id_factura IN (SELECT f.id_factura FROM factura f JOIN compra c USING (id_compra) WHERE c.id_solicitud = :id)', 'DELETE FROM factura WHERE id_compra IN (SELECT id_compra FROM compra WHERE id_solicitud = :id)', 'DELETE FROM detalle_compra WHERE id_compra IN (SELECT id_compra FROM compra WHERE id_solicitud = :id)', 'DELETE FROM compra WHERE id_solicitud = :id', 'DELETE FROM detalle_solicitud WHERE id_solicitud = :id', 'DELETE FROM solicitud_material WHERE id_solicitud = :id'] as $sql) echo 'Limpieza: ' . aq($db, $sql, ['id' => $s])->rowCount() . " registros temporales.\n";
             }
+            if ($proyectoTemporal) {
+                $archivos = array_merge($archivos, aq($db, 'SELECT ruta_archivo FROM fotografia_avance WHERE id_bitacora IN (SELECT id_bitacora FROM bitacora WHERE id_proyecto=:id)', ['id' => $proyectoTemporal])->fetchAll(PDO::FETCH_COLUMN));
+                foreach (['DELETE FROM fotografia_avance WHERE id_bitacora IN (SELECT id_bitacora FROM bitacora WHERE id_proyecto=:id)', 'DELETE FROM bitacora WHERE id_proyecto=:id', 'DELETE FROM actividad WHERE id_proyecto=:id', 'DELETE FROM presupuesto WHERE id_proyecto=:id', 'DELETE FROM proyecto WHERE id_proyecto=:id'] as $sql) echo 'Limpieza flujo: ' . aq($db, $sql, ['id' => $proyectoTemporal])->rowCount() . PHP_EOL;
+            }
             echo 'Limpieza usuario: ' . aq($db, 'DELETE FROM usuario WHERE id_usuario = :id AND nombre_usuario = :marca', ['id' => $uid, 'marca' => $marca])->rowCount() . PHP_EOL;
             $db->commit();
             foreach (array_unique(array_filter($archivos)) as $ruta) {
-                if (!preg_match('~^uploads/(?:facturas|pagos)/[a-f0-9]{48}\.(?:pdf|png|jpe?g)$~D', $ruta)) throw new RuntimeException('Ruta de limpieza no válida');
+                if (!preg_match('~^uploads/(?:facturas|pagos|avances)/[a-f0-9]{48}\.(?:pdf|png|jpe?g)$~D', $ruta)) throw new RuntimeException('Ruta de limpieza no válida');
                 $real = realpath(__DIR__ . '/../' . $ruta); $raiz = realpath(__DIR__ . '/../uploads');
                 if ($real && $raiz && str_starts_with(str_replace('\\', '/', $real), str_replace('\\', '/', $raiz) . '/')) ok(unlink($real), 'archivo temporal eliminado');
             }

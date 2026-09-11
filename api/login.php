@@ -4,9 +4,17 @@ session_start();
 
 header("Content-Type: application/json; charset=utf-8");
 
-require_once __DIR__ . "/../config/database.local.php";
+header("Cache-Control: no-store");
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Allow: POST'); http_response_code(405);
+    echo json_encode(['ok' => false, 'mensaje' => 'Método no permitido.']); exit;
+}
 
 $datos = json_decode(file_get_contents("php://input"), true);
+if (!is_array($datos) || !is_string($datos['usuario'] ?? null) || !is_string($datos['contrasena'] ?? null)) {
+    http_response_code(400);
+    echo json_encode(['ok' => false, 'mensaje' => 'Envía usuario y contraseña como texto.']); exit;
+}
 
 $usuario = trim($datos["usuario"] ?? "");
 $contrasena = $datos["contrasena"] ?? "";
@@ -41,13 +49,18 @@ $sql = "
     LIMIT 1
 ";
 
-$consulta = $conexion->prepare($sql);
+try {
+    ob_start();
+    try { require __DIR__ . '/../config/database.local.php'; } finally { ob_end_clean(); }
+    $consulta = $conexion->prepare($sql);
 
-$consulta->execute([
-    ":usuario" => $usuario
-]);
+    $consulta->execute([":usuario" => $usuario]);
 
-$usuarioEncontrado = $consulta->fetch(PDO::FETCH_ASSOC);
+    $usuarioEncontrado = $consulta->fetch(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo json_encode(['ok' => false, 'mensaje' => 'No se pudo iniciar sesión. Intenta nuevamente.']); exit;
+}
 
 if (!$usuarioEncontrado) {
 
@@ -88,6 +101,7 @@ if (!hash_equals(
     exit;
 }
 
+session_regenerate_id(true);
 $_SESSION["id_usuario"] = $usuarioEncontrado["id_usuario"];
 $_SESSION["nombre_usuario"] = $usuarioEncontrado["nombre_usuario"];
 $_SESSION["nombre"] =

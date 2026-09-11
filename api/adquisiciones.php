@@ -90,6 +90,9 @@ try {
     } elseif ($accion === 'solicitudes_listar') {
         $r = proyecto_query($db, $sqlSolicitud . ' ORDER BY s.id_solicitud DESC', ['pid' => $pid])->fetchAll(PDO::FETCH_ASSOC);
     } elseif ($accion === 'solicitudes_crear') {
+        $inicio = proyecto_fecha($d, 'fecha_solicitud');
+        $necesaria = proyecto_fecha($d, 'fecha_necesaria', false);
+        if ($necesaria !== null && $necesaria < $inicio) responder(['ok' => false, 'mensaje' => 'La fecha necesaria no puede ser anterior a la solicitud.'], 400);
         $r = adquisicion_insertar($db, 'solicitud_material', ['codigo' => proyecto_texto($d, 'codigo', 30, true), 'fecha_solicitud' => proyecto_fecha($d, 'fecha_solicitud'), 'fecha_necesaria' => proyecto_fecha($d, 'fecha_necesaria', false), 'estado' => proyecto_estado($db, $d, 'solicitud_material'), 'observaciones' => proyecto_texto($d, 'observaciones', 100000), 'id_proyecto' => $pid, 'id_actividad' => null, 'solicitada_por' => $usuario, 'revisada_por' => null]);
     } elseif (in_array($accion, ['solicitudes_obtener', 'solicitudes_revisar', 'solicitud_detalle_guardar', 'solicitud_detalle_quitar', 'compras_crear'], true)) {
         $sid = proyecto_id($d['id_solicitud'] ?? null);
