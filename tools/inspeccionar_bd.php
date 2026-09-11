@@ -2,7 +2,7 @@
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 ob_start();
 try {
-    require __DIR__ . '/config/database.local.php';
+    require __DIR__ . '/../config/database.local.php';
     ob_end_clean();
     $q = $conexion->prepare("SELECT table_name, column_name, data_type, character_maximum_length, is_nullable, column_default, is_identity FROM information_schema.columns WHERE table_schema = 'public' AND table_name = :tabla ORDER BY ordinal_position");
     $q->execute(['tabla' => $argv[1] ?? 'cliente']);

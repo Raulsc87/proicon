@@ -4,28 +4,28 @@ Implementado y verificado localmente el 10 de septiembre de 2026.
 
 ## Uso local
 
-En PowerShell ejecutar `./iniciar_proicon.ps1` y abrir `http://localhost:8000`.
+En PowerShell ejecutar `./scripts/iniciar_proicon.ps1` y abrir `http://localhost:8000`.
 El lanzador habilita la extensión nativa fileinfo, si está desactivada, y usa el router que impide descargar adjuntos sin pasar por el endpoint autenticado.
-Comando equivalente en esta instalación: `php -d extension=fileinfo -S localhost:8000 servidor_local.php`.
+Comando equivalente en esta instalación: `php -d extension=fileinfo -S localhost:8000 scripts/servidor_local.php`.
 No se instaló ninguna dependencia ni se modificó la configuración de conexión.
 En Apache, uploads/.htaccess deniega el acceso directo; el servidor debe respetar esa regla. En otros servidores debe configurarse la misma restricción. No usar el servidor PHP sin el router para servir adjuntos privados.
 
 ## Archivos creados
 
 - api/adquisiciones.php
-- adquisiciones.js
-- adquisiciones.css
+- assets/js/adquisiciones.js
+- assets/css/adquisiciones.css
 - solicitud_detalle.html
 - compra_detalle.html
 - factura_detalle.html
 - uploads/.htaccess
-- servidor_local.php
-- iniciar_proicon.ps1
-- inspeccionar_adquisiciones.php
-- pruebas_adquisiciones.php
-- pruebas_interfaz_adquisiciones.php
-- pruebas_interfaz_adquisiciones.js
-- IMPLEMENTACION_ADQUISICIONES.md
+- scripts/servidor_local.php
+- scripts/iniciar_proicon.ps1
+- tools/inspeccionar_adquisiciones.php
+- tests/pruebas_adquisiciones.php
+- tests/pruebas_interfaz_adquisiciones.php
+- tests/pruebas_interfaz_adquisiciones.js
+- docs/IMPLEMENTACION_ADQUISICIONES.md
 
 Modificados: proyecto_detalle.html (sección de solicitudes y recursos del módulo) y .gitignore (uploads ignorados, conservando la protección de database.local.php).
 No se modificaron los endpoints anteriores, cálculos de presupuesto, login, estilos globales ni esquema. No se hicieron commits ni push.

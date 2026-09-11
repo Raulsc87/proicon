@@ -26,7 +26,7 @@ function peticion(string $accion, ?array $datos = null, array $params = [], bool
     return [(int) ($m[1] ?? 0), json_decode($texto, true, 512, JSON_THROW_ON_ERROR)];
 }
 try {
-    ob_start(); require __DIR__ . '/config/database.local.php'; ob_end_clean();
+    ob_start(); require __DIR__ . '/../config/database.local.php'; ob_end_clean();
     $db = $conexion; $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     foreach (['proyecto', 'proyecto_empleado', 'presupuesto', 'detalle_presupuesto', 'cliente', 'proveedor', 'material', 'empleado', 'categoria_costo'] as $tabla) {
         $originales[$tabla] = consulta($db, "SELECT row_to_json(t)::text AS registro FROM $tabla t ORDER BY registro")->fetchAll(PDO::FETCH_COLUMN);

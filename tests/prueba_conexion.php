@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/config/database.local.php';
+require_once __DIR__ . '/../config/database.local.php';
 
 $sql = "SELECT current_database() AS base, COUNT(*) AS usuarios FROM usuario";
 $resultado = $conexion->query($sql);

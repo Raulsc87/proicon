@@ -2,7 +2,7 @@
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 ob_start();
 try {
-    require __DIR__ . '/config/database.local.php';
+    require __DIR__ . '/../config/database.local.php';
     ob_end_clean();
     foreach (['solicitud_material', 'detalle_solicitud', 'compra', 'detalle_compra', 'factura', 'pago'] as $tabla) {
         $q = $conexion->prepare("SELECT column_name, data_type, character_maximum_length AS longitud, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = 'public' AND table_name = :tabla ORDER BY ordinal_position");

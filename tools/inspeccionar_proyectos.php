@@ -2,7 +2,7 @@
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 ob_start();
 try {
-    require __DIR__ . '/config/database.local.php';
+    require __DIR__ . '/../config/database.local.php';
     ob_end_clean();
     foreach (['proyecto' => ['estado', 'estado_avance'], 'proyecto_empleado' => ['estado'], 'presupuesto' => ['estado']] as $tabla => $campos) {
         foreach ($campos as $campo) {

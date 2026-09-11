@@ -25,7 +25,7 @@ function adq(string $a, ?array $d = null, array $get = [], bool $auth = true, ?a
     return [$s, json_decode($t, true, 512, JSON_THROW_ON_ERROR)];
 }
 try {
-    ob_start(); require __DIR__ . '/config/database.local.php'; ob_end_clean(); $db = $conexion; $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    ob_start(); require __DIR__ . '/../config/database.local.php'; ob_end_clean(); $db = $conexion; $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     ok(extension_loaded('fileinfo'), 'fileinfo nativo disponible');
     foreach (['solicitud_material', 'detalle_solicitud', 'compra', 'detalle_compra', 'factura', 'pago', 'usuario', 'cliente', 'proveedor', 'material', 'proyecto', 'proyecto_empleado', 'presupuesto', 'detalle_presupuesto'] as $tabla) $originales[$tabla] = aq($db, "SELECT row_to_json(t)::text AS r FROM $tabla t ORDER BY r")->fetchAll(PDO::FETCH_COLUMN);
     $base = aq($db, 'SELECT id_empleado, id_rol FROM usuario ORDER BY id_usuario LIMIT 1')->fetch(PDO::FETCH_ASSOC);
@@ -128,7 +128,7 @@ try {
             $db->commit();
             foreach (array_unique(array_filter($archivos)) as $ruta) {
                 if (!preg_match('~^uploads/(?:facturas|pagos)/[a-f0-9]{48}\.(?:pdf|png|jpe?g)$~D', $ruta)) throw new RuntimeException('Ruta de limpieza no válida');
-                $real = realpath(__DIR__ . '/' . $ruta); $raiz = realpath(__DIR__ . '/uploads');
+                $real = realpath(__DIR__ . '/../' . $ruta); $raiz = realpath(__DIR__ . '/../uploads');
                 if ($real && $raiz && str_starts_with(str_replace('\\', '/', $real), str_replace('\\', '/', $raiz) . '/')) ok(unlink($real), 'archivo temporal eliminado');
             }
             foreach ($originales as $tabla => $filas) ok(aq($db, "SELECT row_to_json(t)::text AS r FROM $tabla t ORDER BY r")->fetchAll(PDO::FETCH_COLUMN) === $filas, "$tabla conserva originales");

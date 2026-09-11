@@ -20,18 +20,18 @@ Creados:
 - api/proyectos_presupuestos_crear.php
 - api/proyectos_presupuestos_listar.php
 - api/proyectos_presupuestos_obtener.php
-- inspeccionar_proyectos.php
+- tools/inspeccionar_proyectos.php
 - proyecto_detalle.html
-- proyecto_detalle.js
-- proyectos.css
+- assets/js/proyecto_detalle.js
+- assets/css/proyectos.css
 - proyectos.html
-- proyectos.js
-- proyectos_comun.js
-- pruebas_proyectos.php
-- IMPLEMENTACION_PROYECTOS.md
+- assets/js/proyectos.js
+- assets/js/proyectos_comun.js
+- tests/pruebas_proyectos.php
+- docs/IMPLEMENTACION_PROYECTOS.md
 
 Modificado: principal.html, para enlazar Proyectos y Presupuestos por proyecto desde el menú y las tarjetas.
-No se modificaron el login, los mantenimientos anteriores, estilos.css ni config/database.local.php. No se agregaron dependencias ni se alteró el esquema.
+No se modificaron el login, los mantenimientos anteriores, assets/css/estilos.css ni config/database.local.php. No se agregaron dependencias ni se alteró el esquema.
 
 ## Funcionalidades
 

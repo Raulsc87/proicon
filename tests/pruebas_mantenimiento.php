@@ -5,7 +5,7 @@ ini_set('session.use_cookies', '0');
 session_cache_limiter('');
 $modulo = $argv[1] ?? 'clientes';
 if (!in_array($modulo, ['clientes', 'proveedores', 'materiales'], true)) exit(1);
-$config = require __DIR__ . '/api/' . $modulo . '_config.php';
+$config = require __DIR__ . '/../api/' . $modulo . '_config.php';
 $tabla = $config['tabla'];
 $idCampo = $config['id'];
 $marca = 'PRUEBA_PROICON_' . bin2hex(random_bytes(8));
@@ -34,7 +34,7 @@ function http(string $accion, ?array $datos = null, string $consulta = '', bool 
 }
 try {
     ob_start();
-    require __DIR__ . '/config/database.local.php';
+    require __DIR__ . '/../config/database.local.php';
     ob_end_clean();
     $conexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $q = $conexion->prepare("SELECT * FROM $tabla ORDER BY $idCampo");
