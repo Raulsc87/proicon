@@ -28,6 +28,9 @@ function proyecto_fecha(array $datos, string $campo, bool $requerido = true): ?s
     return $v;
 }
 function proyecto_estados(PDO $db, string $tabla, string $campo = 'estado'): array {
+    // Catálogos autorizados para el prototipo; no dependen de tener filas de cada estado.
+    if ($campo === 'estado' && $tabla === 'proyecto_empleado') return ['ACTIVO', 'INACTIVO'];
+    if ($campo === 'estado' && $tabla === 'presupuesto') return ['BORRADOR', 'PENDIENTE', 'APROBADO', 'RECHAZADO'];
     // Ambos identificadores provienen exclusivamente del código del servidor.
     return proyecto_query($db, "SELECT DISTINCT $campo FROM $tabla ORDER BY $campo")->fetchAll(PDO::FETCH_COLUMN);
 }
@@ -117,16 +120,19 @@ function proyectos_api(string $accion): void {
                 $r = $accion === 'empleados_crear'
                     ? proyecto_guardar($db, 'proyecto_empleado', $v + ['id_proyecto' => $pid, 'id_empleado' => $eid])
                     : proyecto_guardar($db, 'proyecto_empleado', $v, 'id_proyecto = :pid AND id_empleado = :eid', ['pid' => $pid, 'eid' => $eid]);
-            } elseif ($accion === 'presupuestos_crear') {
-                $v = ['version' => proyecto_id($d['version'] ?? null), 'fecha_registro' => proyecto_fecha($d, 'fecha_registro'), 'estado' => proyecto_estado($db, $d, 'presupuesto'), 'observaciones' => proyecto_texto($d, 'observaciones', 100000), 'id_proyecto' => $pid, 'creado_por' => $usuario];
+            } elseif (in_array($accion, ['presupuestos_crear', 'presupuestos_editar'], true)) {
+                $bid = $accion === 'presupuestos_editar' ? proyecto_id($d['id_presupuesto'] ?? null) : null;
+                if ($bid && !proyecto_query($db, 'SELECT 1 FROM presupuesto WHERE id_presupuesto = :bid AND id_proyecto = :pid', ['bid' => $bid, 'pid' => $pid])->fetchColumn()) responder(['ok' => false, 'mensaje' => 'Presupuesto no encontrado en este proyecto.'], 404);
+                if (!$bid && !isset($d['estado'])) $d['estado'] = 'BORRADOR';
+                $v = ['version' => proyecto_id($d['version'] ?? null), 'fecha_registro' => proyecto_fecha($d, 'fecha_registro'), 'estado' => proyecto_estado($db, $d, 'presupuesto'), 'observaciones' => proyecto_texto($d, 'observaciones', 100000)];
                 // Serializa las versiones del mismo proyecto sin modificar el esquema.
                 $db->beginTransaction();
                 proyecto_query($db, 'SELECT id_proyecto FROM proyecto WHERE id_proyecto = :id FOR UPDATE', ['id' => $pid]);
-                if (proyecto_query($db, 'SELECT 1 FROM presupuesto WHERE id_proyecto = :id AND version = :version', ['id' => $pid, 'version' => $v['version']])->fetchColumn()) {
+                if (proyecto_query($db, 'SELECT 1 FROM presupuesto WHERE id_proyecto = :id AND version = :version AND id_presupuesto <> :bid', ['id' => $pid, 'version' => $v['version'], 'bid' => $bid ?? 0])->fetchColumn()) {
                     $db->rollBack();
                     responder(['ok' => false, 'mensaje' => 'Esta versión ya existe en el proyecto.'], 409);
                 }
-                $r = proyecto_guardar($db, 'presupuesto', $v);
+                $r = $bid ? proyecto_guardar($db, 'presupuesto', $v, 'id_presupuesto = :bid AND id_proyecto = :pid', ['bid' => $bid, 'pid' => $pid]) : proyecto_guardar($db, 'presupuesto', $v + ['id_proyecto' => $pid, 'creado_por' => $usuario]);
                 $db->commit();
             } elseif (in_array($accion, ['presupuestos_listar', 'presupuestos_obtener', 'detalles_crear', 'detalles_editar'], true)) {
                 $sql = "SELECT p.*, u.nombre_usuario AS creador, COALESCE((SELECT SUM(d.cantidad * d.precio_unitario) FROM detalle_presupuesto d WHERE d.id_presupuesto = p.id_presupuesto), 0) AS total FROM presupuesto p JOIN usuario u ON u.id_usuario = p.creado_por WHERE p.id_proyecto = :pid";

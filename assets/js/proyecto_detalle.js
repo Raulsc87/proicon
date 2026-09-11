@@ -1,14 +1,14 @@
 (() => {
     const {el, api, operar, opciones, abrir, tabla, enviar, informar, dinero, hoy} = Proicon;
     const pid = new URLSearchParams(location.search).get('id');
-    let empleadoId = null, presupuestoId = null, detalleId = null, catalogos, presupuestos = [];
+    let empleadoId = null, presupuestoId = null, presupuestoEditarId = null, detalleId = null, catalogos, presupuestos = [];
     const leer = (accion, extra = {}) => api(accion, null, {id_proyecto: pid, ...extra});
     const guardar = (accion, datos) => api(accion, {...datos, id_proyecto: pid});
     function abrirEmpleado(r = null) {
         empleadoId = r?.id_empleado ?? null;
-        abrir('empleado', r ? {...r, estado_empleado: r.estado} : {fecha_asignacion: hoy()});
-        el('id_empleado').disabled = Boolean(r);
         el('empleadoTitulo').textContent = r ? 'Editar asignación y estado' : 'Asignar empleado';
+        abrir('empleado', r ? {...r, estado_empleado: r.estado} : {fecha_asignacion: hoy(), estado_empleado: 'ACTIVO'});
+        el('id_empleado').disabled = Boolean(r);
     }
     async function cargarEmpleados() {
         const r = await leer('empleados_listar');
@@ -18,7 +18,12 @@
     }
     async function cargarPresupuestos() {
         presupuestos = await leer('presupuestos_listar');
-        tabla('presupuestos', presupuestos, ['version', 'fecha_registro', 'estado', 'creador', r => dinero(r.total)], r => [['Abrir presupuesto', () => cargarDetalles(r.id_presupuesto)]]);
+        tabla('presupuestos', presupuestos, ['version', 'fecha_registro', 'estado', 'creador', r => dinero(r.total)], r => [['Abrir presupuesto', () => cargarDetalles(r.id_presupuesto)], ['Editar', async () => {
+            const p = await leer('presupuestos_obtener', {id_presupuesto: r.id_presupuesto});
+            presupuestoEditarId = p.id_presupuesto;
+            el('presupuestoTitulo').textContent = 'Editar presupuesto';
+            abrir('presupuesto', {...p, estado_presupuesto: p.estado, observaciones_presupuesto: p.observaciones});
+        }]]);
     }
     function abrirDetalle(r = null, lectura = false) {
         detalleId = r?.id_detalle_presupuesto ?? null;
@@ -37,15 +42,19 @@
         el('tituloPresupuesto').focus();
     }
     el('asignar').addEventListener('click', () => abrirEmpleado());
-    el('nuevoPresupuesto').addEventListener('click', () => abrir('presupuesto', {version: Math.max(0, ...presupuestos.map(p => Number(p.version))) + 1, fecha_registro: hoy()}));
+    el('nuevoPresupuesto').addEventListener('click', () => {
+        presupuestoEditarId = null;
+        el('presupuestoTitulo').textContent = 'Nuevo presupuesto';
+        abrir('presupuesto', {version: Math.max(0, ...presupuestos.map(p => Number(p.version))) + 1, fecha_registro: hoy(), estado_presupuesto: 'BORRADOR'});
+    });
     el('agregarDetalle').addEventListener('click', () => abrirDetalle());
     enviar('empleado', async d => {
         await guardar(empleadoId ? 'empleados_editar' : 'empleados_crear', {...d, id_empleado: empleadoId ?? d.id_empleado, estado: d.estado_empleado});
         el('empleadoEditor').hidden = true; informar('Asignación guardada.'); await cargarEmpleados();
     });
     enviar('presupuesto', async d => {
-        const r = await guardar('presupuestos_crear', {...d, estado: d.estado_presupuesto, observaciones: d.observaciones_presupuesto});
-        el('presupuestoEditor').hidden = true; informar('Presupuesto creado.'); await cargarPresupuestos(); await cargarDetalles(r.id_presupuesto);
+        const r = await guardar(presupuestoEditarId ? 'presupuestos_editar' : 'presupuestos_crear', {...d, id_presupuesto: presupuestoEditarId, estado: d.estado_presupuesto, observaciones: d.observaciones_presupuesto});
+        el('presupuestoEditor').hidden = true; informar('Presupuesto guardado.'); await cargarPresupuestos(); await cargarDetalles(r.id_presupuesto);
     });
     enviar('detalle', async d => {
         await guardar(detalleId ? 'detalles_editar' : 'detalles_crear', {...d, id_presupuesto: presupuestoId, id_detalle_presupuesto: detalleId, observaciones: d.observaciones_detalle});

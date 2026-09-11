@@ -32,9 +32,52 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
         };
         const call = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, {resolve, reject}); ws.send(JSON.stringify({id, method, params})); });
         const evaluate = async expression => { const r = await call('Runtime.evaluate', {expression, returnByValue: true, awaitPromise: true}); if (r.exceptionDetails) throw new Error('Error al evaluar interfaz'); return r.result.value; };
-        const wait = async expression => { for (let i = 0; i < 100; i++) { if (await evaluate(expression)) return; await sleep(100); } throw new Error('La interfaz no completó la carga esperada.'); };
+        const wait = async expression => { for (let i = 0; i < 100; i++) { if (await evaluate(expression)) return; await sleep(100); } throw new Error('La interfaz no completó la carga esperada: ' + expression); };
         await call('Runtime.enable'); await call('Network.enable');
         await call('Network.setCookie', {name: 'PHPSESSID', value: sid, url: 'http://localhost:8000'});
+        if (process.argv.includes('--edicion')) {
+            await call('Page.navigate', {url: 'http://localhost:8000/proyecto_detalle.html?id=' + ids.id_proyecto});
+            await wait('document.querySelector("#presupuestos button") && document.querySelector("#empleados button") && document.querySelector("#actividadesProyecto tbody button") && !document.getElementById("centroProyecto").hidden');
+            for (const [lista, editor, campo] of [['empleados','empleado','funcion_en_proyecto'], ['presupuestos','presupuesto','version']]) {
+                await evaluate(`window.scrollTo(0, document.body.scrollHeight); Array.from(document.querySelectorAll('#${lista} button')).find(b => b.textContent.startsWith('Editar')).click()`);
+                await wait(`!document.getElementById('${editor}Editor').hidden && document.activeElement.id === '${campo}'`);
+                await sleep(700);
+                assert(await evaluate(`document.getElementById('${editor}Editor').getBoundingClientRect().top >= -5 && document.getElementById('${editor}Editor').getBoundingClientRect().top < innerHeight`), 'Formulario visible tras scroll');
+                assert(await evaluate(`document.querySelector('#${editor}Form [type=submit]').textContent === 'Guardar cambios'`));
+                await evaluate(`document.querySelector('#${editor}Form [data-cerrar]').click()`);
+                assert(await evaluate(`document.getElementById('${editor}Editor').hidden`));
+                console.log('OK: Editar ' + lista + ' desplaza, enfoca y permite Cancelar');
+            }
+            await evaluate('document.getElementById("nuevoPresupuesto").click()');
+            assert(await evaluate('document.getElementById("estado_presupuesto").value === "BORRADOR"'));
+            await evaluate('document.querySelector("#presupuestoForm [data-cerrar]").click()');
+            await evaluate('Array.from(document.querySelectorAll("#actividadesProyecto tbody button")).find(b=>b.textContent==="Editar").click()');
+            await wait('!!document.querySelector(".avances dialog[open]")');
+            assert(await evaluate('document.activeElement.name === "nombre" && document.querySelector(".avances dialog[open] [type=submit]").textContent === "Guardar cambios"'));
+            await evaluate('Array.from(document.querySelectorAll(".avances dialog[open] button")).find(b=>b.textContent==="Cancelar").click()');
+            await wait('!document.querySelector(".avances dialog[open]")');
+            await evaluate('document.querySelector("#evidenciaFotografica details").open=true');
+            await wait('!!document.querySelector(".foto-avance")');
+            const cantidadFotos = await evaluate('document.querySelectorAll(".foto-avance").length');
+            for (let i = 0; i < cantidadFotos; i++) { await evaluate(`document.querySelectorAll('.foto-avance')[${i}].scrollIntoView()`); await sleep(150); }
+            await wait('Array.from(document.querySelectorAll(".foto-avance")).some(f=>f.textContent.includes("Imagen no disponible"))');
+            assert(await evaluate('Array.from(document.querySelectorAll(".foto-avance")).find(f=>f.textContent.includes("Imagen no disponible")).querySelector("img").hidden'));
+            await evaluate('Array.from(document.querySelectorAll(".foto-avance")).find(f=>f.textContent.includes("Imagen no disponible")).querySelector("button").click()');
+            await wait('document.querySelector(".visor-foto")?.textContent.includes("Imagen no disponible")');
+            assert(await evaluate('document.querySelector(".visor-foto img").hidden'));
+            await evaluate('document.querySelector(".visor-foto").close()');
+            console.log('OK: BORRADOR inicial, edición de actividad y fotografía faltante sin imagen rota');
+            for (const pagina of ['clientes', 'proveedores', 'materiales', 'proyectos']) {
+                await call('Page.navigate', {url: 'http://localhost:8000/' + pagina + '.html'});
+                await wait('!!document.querySelector("#filas button")');
+                await evaluate('Array.from(document.querySelectorAll("#filas button")).find(b=>b.textContent==="Editar").click()');
+                const form = pagina === 'proyectos' ? 'proyectoForm' : 'formulario';
+                await wait(`document.querySelector('#${form} [type=submit]')?.textContent === 'Guardar cambios'`);
+                assert(await evaluate(`document.activeElement === document.querySelector('#${form} input:not(:disabled)')`));
+                await evaluate(pagina === 'proyectos' ? 'document.querySelector("#proyectoForm [data-cerrar]").click()' : 'document.getElementById("cancelar").click()');
+                console.log('OK: edición y Cancelar en ' + pagina);
+            }
+        }
         const routes = [
             ['proyecto_detalle.html?id=' + ids.id_proyecto, 'Solicitudes de materiales', '+ Nueva solicitud'],
             ['solicitud_detalle.html?proyecto=' + ids.id_proyecto + '&id=' + ids.id_solicitud, 'Materiales solicitados', 'Consultar'],

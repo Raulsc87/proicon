@@ -93,8 +93,8 @@
             group.append(label, input); grid.append(group);
         }
         form.append(grid, status);
-        if (guardar) { const b = nodo('button', 'Guardar'); b.type = 'submit'; form.append(b); }
-        const cerrar = nodo('button', 'Cerrar'); cerrar.type = 'button'; cerrar.addEventListener('click', () => { if (!ocupado) dialog.close(); }); form.append(cerrar);
+        if (guardar) { const b = nodo('button', titulo.startsWith('Editar') ? 'Guardar cambios' : 'Guardar'); b.type = 'submit'; form.append(b); }
+        const cerrar = nodo('button', guardar ? 'Cancelar' : 'Cerrar'); cerrar.type = 'button'; cerrar.addEventListener('click', () => { if (!ocupado) dialog.close(); }); form.append(cerrar);
         dialog.addEventListener('cancel', e => { if (ocupado) e.preventDefault(); });
         dialog.addEventListener('close', () => dialog.remove());
         form.addEventListener('submit', e => { e.preventDefault(); operar(async () => {
@@ -103,6 +103,8 @@
             await guardar(fd); dialog.close(); await cargar(); mensaje('Cambios guardados.');
         }); });
         dialog.append(form); root.append(dialog); dialog.showModal();
+        form.querySelector('input:not(:disabled), select:not(:disabled), textarea:not(:disabled)')?.focus({preventScroll: true});
+        form.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest'});
         return form;
     }
     function base() {
@@ -134,7 +136,7 @@
         datos(p, r, [['Proyecto', () => cat.proyecto.nombre], ['Fecha', 'fecha_solicitud'], ['Fecha necesaria', 'fecha_necesaria'], ['Estado', 'estado'], ['Solicitada por', 'solicitante'], ['Revisada por', x => x.revisor ?? 'Sin revisar'], ['Actividad', x => x.actividad ?? 'Sin actividad asociada'], ['Observaciones', 'observaciones']]);
         boton('Revisar solicitud', async () => { if (!confirm('¿Registrar la revisión con tu usuario actual?')) return; await api('solicitudes_revisar', {id_solicitud: id}); await cargar(); }, p, !r.editable || !r.detalles.length);
         const mat = panel('Materiales solicitados');
-        const editar = (d = {}, lectura = false) => formulario(lectura ? 'Consultar material' : 'Material solicitado', [selector('id_material', 'Material', cat.materiales.map(m => ({...m, etiqueta: m.nombre + ' (' + m.unidad + ')'})), 'id_material', 'etiqueta'), numero('cantidad', 'Cantidad', true), obsDetalle], d, lectura ? null : fd => api('solicitud_detalle_guardar', {...Object.fromEntries(fd), id_solicitud: id, id_detalle_solicitud: d.id_detalle_solicitud}), 'Los cambios de materiales requieren revisar nuevamente la solicitud.');
+        const editar = (d = {}, lectura = false) => formulario(lectura ? 'Consultar material' : d.id_detalle_solicitud ? 'Editar material solicitado' : 'Material solicitado', [selector('id_material', 'Material', cat.materiales.map(m => ({...m, etiqueta: m.nombre + ' (' + m.unidad + ')'})), 'id_material', 'etiqueta'), numero('cantidad', 'Cantidad', true), obsDetalle], d, lectura ? null : fd => api('solicitud_detalle_guardar', {...Object.fromEntries(fd), id_solicitud: id, id_detalle_solicitud: d.id_detalle_solicitud}), 'Los cambios de materiales requieren revisar nuevamente la solicitud.');
         boton('+ Agregar material', () => editar(), mat, !r.editable);
         tabla(mat, r.detalles, [['Material', 'material'], ['Unidad', 'unidad'], ['Cantidad', 'cantidad', 'cantidad']], d => [['Consultar', () => editar(d, true)], ...(r.editable ? [['Editar', () => editar(d)], ['Quitar', async () => { if (!confirm('¿Quitar este material de la solicitud?')) return; await api('solicitud_detalle_quitar', {id_solicitud: id, id_detalle_solicitud: d.id_detalle_solicitud}); await cargar(); }]] : [])]);
         if (!r.editable) mat.append(nodo('p', 'La solicitud ya tiene compras; sus materiales se conservan.', 'aviso'));
@@ -152,7 +154,7 @@
         const editar = (d = {}, lectura = false) => {
             const lista = [...disponibles];
             if (d.id_material && !lista.some(m => String(m.id_material) === String(d.id_material))) lista.push({id_material: d.id_material, material: d.material});
-            const f = formulario(lectura ? 'Consultar detalle de compra' : 'Material de compra', [selector('id_material', 'Material', lista, 'id_material', 'material'), numero('cantidad', 'Cantidad', true), numero('precio_unitario', 'P. Unitario (Q)'), obsDetalle], d, lectura ? null : fd => api('compra_detalle_guardar', {...Object.fromEntries(fd), id_compra: id, id_detalle_compra: d.id_detalle_compra}), r.id_solicitud ? 'Al seleccionar un material se propone la cantidad aún disponible de la solicitud. Indica el precio de compra.' : 'Indica la cantidad y el precio de compra.');
+            const f = formulario(lectura ? 'Consultar detalle de compra' : d.id_detalle_compra ? 'Editar detalle de compra' : 'Material de compra', [selector('id_material', 'Material', lista, 'id_material', 'material'), numero('cantidad', 'Cantidad', true), numero('precio_unitario', 'P. Unitario (Q)'), obsDetalle], d, lectura ? null : fd => api('compra_detalle_guardar', {...Object.fromEntries(fd), id_compra: id, id_detalle_compra: d.id_detalle_compra}), r.id_solicitud ? 'Al seleccionar un material se propone la cantidad aún disponible de la solicitud. Indica el precio de compra.' : 'Indica la cantidad y el precio de compra.');
             if (!lectura && !d.id_detalle_compra) f.elements.id_material.addEventListener('change', () => { const m = lista.find(m => String(m.id_material) === f.elements.id_material.value); if (m?.disponible !== undefined) f.elements.cantidad.value = m.disponible; });
             if (!lectura && !d.id_detalle_compra && lista.length === 1 && lista[0].disponible !== undefined) f.elements.cantidad.value = lista[0].disponible;
         };

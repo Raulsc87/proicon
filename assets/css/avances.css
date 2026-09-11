@@ -1,0 +1,17 @@
+.avances { min-width: 0; }
+.avances .tabla-contenedor { overflow-x: auto; max-width: 100%; }
+.avances table { min-width: 820px; }
+.avances th, .avances td:nth-child(3), .avances td:nth-child(4), .avances .acciones { white-space: nowrap; }
+.avances td:first-child { min-width: 190px; }
+.avances .porcentaje-obra { font-size: 28px; font-weight: bold; margin: 12px 0; }
+.avances progress { width: 100%; height: 22px; accent-color: #2563eb; }
+.avances .nota-avance { color: #6b7280; }
+.avances dialog { width: min(740px, calc(100% - 32px)); max-height: 90vh; overflow: auto; border: 1px solid #d1d5db; border-radius: 12px; padding: 24px; box-sizing: border-box; }
+.avances dialog::backdrop { background: rgb(17 24 39 / 45%); }
+.avances dialog h2 { margin-top: 0; }
+.avances summary { cursor: pointer; padding: 12px 0; font-weight: bold; }
+.galeria-avance { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+.foto-avance { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; overflow-wrap: anywhere; }
+.foto-avance img { width: 100%; height: 180px; object-fit: cover; border-radius: 6px; }
+.avances .visor-foto img { width: 100%; max-height: 65vh; object-fit: contain; }
+@media (max-width: 650px) { .galeria-avance { grid-template-columns: 1fr; } .avances dialog { padding: 16px; } }

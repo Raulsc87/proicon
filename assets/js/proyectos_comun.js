@@ -33,9 +33,16 @@ const Proicon = (() => {
         f.reset();
         f.querySelector('fieldset').disabled = lectura;
         f.querySelector('[type=submit]').hidden = lectura;
+        const edicion = !lectura && el(id + 'Titulo').textContent.startsWith('Editar');
+        f.querySelector('[type=submit]').textContent = edicion ? 'Guardar cambios' : 'Guardar';
+        f.querySelector('[data-cerrar]').textContent = lectura ? 'Cerrar' : 'Cancelar';
         for (const campo of f.querySelectorAll('[name]')) if (Object.hasOwn(registro, campo.name)) campo.value = registro[campo.name] ?? '';
         el(id + 'Editor').hidden = false;
-        el(id + 'Titulo').focus();
+        requestAnimationFrame(() => {
+            const campo = f.querySelector('input:not(:disabled), select:not(:disabled), textarea:not(:disabled)');
+            (lectura ? el(id + 'Titulo') : campo || el(id + 'Titulo')).focus({preventScroll: true});
+            el(id + 'Editor').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'});
+        });
     }
     function tabla(id, registros, campos, acciones) {
         el(id).replaceChildren();

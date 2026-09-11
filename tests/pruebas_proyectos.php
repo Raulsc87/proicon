@@ -35,7 +35,7 @@ try {
     verificar((bool) $uid, 'hay un usuario real para la sesión temporal');
     session_id($sesion); session_start(); $_SESSION = ['id_usuario' => $uid, 'nombre' => 'Prueba local', 'rol' => 'PRUEBA']; session_write_close();
     $lecturas = ['catalogos', 'listar', 'obtener', 'empleados_listar', 'presupuestos_listar', 'presupuestos_obtener'];
-    $escrituras = ['crear', 'editar', 'estado', 'empleados_crear', 'empleados_editar', 'presupuestos_crear', 'detalles_crear', 'detalles_editar'];
+    $escrituras = ['crear', 'editar', 'estado', 'empleados_crear', 'empleados_editar', 'presupuestos_crear', 'presupuestos_editar', 'detalles_crear', 'detalles_editar'];
     foreach (array_merge($lecturas, $escrituras) as $a) {
         [$s] = peticion($a, in_array($a, $escrituras, true) ? ['id' => 1] : null, [], false);
         verificar($s === 401, "$a rechaza acceso sin sesión");
@@ -62,9 +62,20 @@ try {
     [$s] = peticion('empleados_crear', $e); verificar($s === 409, 'rechaza empleado duplicado');
     $e['funcion_en_proyecto'] = 'Encargado de compras';
     [$s, $r] = peticion('empleados_editar', $e); verificar($s === 200 && $r['datos']['funcion_en_proyecto'] === $e['funcion_en_proyecto'], 'editar función y estado de asignación');
+    foreach (['INACTIVO', 'ACTIVO'] as $estado) {
+        [$s, $r] = peticion('empleados_editar', array_replace($e, ['estado' => $estado]));
+        verificar($s === 200 && $r['datos']['estado'] === $estado, 'asignación cambia a ' . $estado);
+    }
     [$s, $r] = peticion('empleados_listar', null, ['id_proyecto' => $pid]); verificar($s === 200 && count($r['datos']) === 1 && isset($r['datos'][0]['nombre']), 'consultar empleados asignados');
     $b = ['id_proyecto' => $pid, 'version' => 1, 'fecha_registro' => '2026-09-10', 'estado' => $c['estados_presupuesto'][0], 'creado_por' => 2147483647];
     [$s, $r] = peticion('presupuestos_crear', $b); verificar($s === 201 && (int) $r['datos']['creado_por'] === (int) $uid, 'crear presupuesto con autor tomado de sesión'); $bid = $r['datos']['id_presupuesto'];
+    verificar($r['datos']['estado'] === 'BORRADOR', 'crear presupuesto BORRADOR');
+    foreach (['PENDIENTE', 'APROBADO', 'RECHAZADO'] as $estado) {
+        [$s, $r] = peticion('presupuestos_editar', array_replace($b, ['id_presupuesto' => $bid, 'estado' => $estado]));
+        verificar($s === 200 && $r['datos']['estado'] === $estado && (int) $r['datos']['creado_por'] === (int) $uid, 'presupuesto cambia a ' . $estado . ' conservando autor');
+    }
+    [$s] = peticion('presupuestos_editar', array_replace($b, ['id_presupuesto' => $bid, 'estado' => 'INVALIDO'])); verificar($s === 400, 'rechaza estado de presupuesto inválido');
+    if ($existente) { [$s] = peticion('presupuestos_editar', array_replace($b, ['id_presupuesto' => $bid, 'id_proyecto' => $existente])); verificar($s === 404, 'rechaza edición de presupuesto de otro proyecto'); }
     [$s] = peticion('presupuestos_crear', $b); verificar($s === 409, 'rechaza versión duplicada');
     [$s] = peticion('presupuestos_crear', array_replace($b, ['version' => 2])); verificar($s === 201, 'crear segunda versión');
     $d = ['id_proyecto' => $pid, 'id_presupuesto' => $bid, 'concepto' => 'Material temporal', 'id_categoria_costo' => $c['categorias'][0]['id_categoria_costo'], 'id_material' => $c['materiales'][0]['id_material'], 'cantidad' => '450', 'precio_unitario' => '82.50'];

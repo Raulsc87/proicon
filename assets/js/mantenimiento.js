@@ -87,9 +87,12 @@ function iniciarMantenimiento(config) {
             if (registro) campo.value = registro[campo.name] ?? "";
         });
         guardar.hidden = lectura;
+        guardar.textContent = registro && !lectura ? 'Guardar cambios' : 'Guardar';
+        document.getElementById('cancelar').textContent = lectura ? 'Cerrar' : 'Cancelar';
         document.getElementById("tituloEditor").textContent = (lectura ? "Ver " : registro ? "Editar " : "Nuevo ") + config.singular;
         editor.hidden = false;
-        document.getElementById("tituloEditor").focus();
+        (lectura ? document.getElementById('tituloEditor') : campos.find(c => !c.disabled)).focus({preventScroll: true});
+        editor.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'});
         informar("");
     }
 
