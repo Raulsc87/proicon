@@ -2,6 +2,8 @@
 
 Implementación y pruebas locales del 7 de octubre de 2026.
 
+Actualización posterior: las contraseñas ya se migraron a hashes; ver [Contraseñas seguras](contrasenas_seguras.md). Este informe conserva los resultados de la implementación original de autorización. La suite de permisos ahora prepara sesiones de prueba sin leer contraseñas; la verificación de login corresponde a la suite de contraseñas. No ejecutar la suite completa de autorización cuando se requiera evitar incluso cambios temporales de permisos.
+
 ## Funcionamiento
 
 `api/autorizacion.php` centraliza la conexión PDO, la identidad y las comprobaciones:
@@ -67,7 +69,7 @@ La suite cambia temporalmente `rol_permiso` del rol del primer usuario activo pa
 
 Los roles originales INGENIERO y ASISTENTE siguen existiendo y conservan sus permisos. Actualmente no tienen gestión de clientes, proveedores, materiales, presupuestos, compras, facturas o pagos; tampoco VER_PAGOS. Esas acciones ahora quedan ocultas o denegadas conforme a la configuración real. No se les concedieron permisos permanentes para conservar accesos que no les corresponden.
 
-Se corrigió la exposición de información anidada en respuestas compartidas y se comprobó que un permiso de gestión de actividades no habilite los botones de fotografías. No se detectaron fallos de integridad en las pruebas. La administración de usuarios y la migración de contraseñas siguen pendientes para su etapa correspondiente.
+Se corrigió la exposición de información anidada en respuestas compartidas y se comprobó que un permiso de gestión de actividades no habilite los botones de fotografías. No se detectaron fallos de integridad en las pruebas. La administración de usuarios sigue pendiente; la migración de contraseñas se realizó posteriormente y está documentada por separado.
 
 La configuración PDO local puede terminar la petición al fallar. La utilidad de autorización intercepta esa terminación para evitar que su mensaje llegue al cliente, además de capturar excepciones normales.
 

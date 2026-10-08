@@ -41,12 +41,13 @@ try {
     $db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
     $tablas=au_q("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename")->fetchAll(PDO::FETCH_COLUMN);
     foreach($tablas as $tabla) { if(!preg_match('/^[a-z_]+$/D',$tabla)) throw new RuntimeException('Tabla inesperada'); $originales[$tabla]=au_q("SELECT md5(row_to_json(t)::text) AS r FROM $tabla t ORDER BY r")->fetchAll(PDO::FETCH_COLUMN); }
-    $usuarios=au_q("SELECT id_usuario,nombre_usuario,contrasena,id_rol FROM usuario WHERE estado='ACTIVO' ORDER BY id_usuario")->fetchAll(PDO::FETCH_ASSOC);
+    $usuarios=au_q("SELECT id_usuario,nombre_usuario,id_rol FROM usuario WHERE estado='ACTIVO' ORDER BY id_usuario")->fetchAll(PDO::FETCH_ASSOC);
     au_ok(count($usuarios)>0,'usuarios existentes disponibles');
     $inicial='';
     foreach($usuarios as $u) {
-        $sesion=''; [$s,$r]=au_http('api/login.php',['usuario'=>$u['nombre_usuario'],'contrasena'=>$u['contrasena']]);
-        au_ok($s===200 && $r['ok'],'login usuario existente '.$u['id_usuario']);
+        // La suite de permisos no lee contraseñas; el login se prueba por separado.
+        $sesion=bin2hex(random_bytes(24)); $sesiones[]=$sesion;
+        session_id($sesion); session_start(); $_SESSION=['id_usuario'=>$u['id_usuario']]; session_write_close();
         [$s,$r]=au_http('api/sesion.php');
         $esperados=au_q('SELECT p.codigo FROM rol_permiso rp JOIN permiso p USING(id_permiso) WHERE rp.id_rol=:id ORDER BY p.codigo',['id'=>$u['id_rol']])->fetchAll(PDO::FETCH_COLUMN);
         au_ok($s===200 && $r['activa'] && $r['usuario']['id_usuario']==$u['id_usuario'] && $r['usuario']['permisos']===$esperados,'sesión devuelve permisos reales '.$u['id_usuario']);
@@ -61,7 +62,8 @@ try {
     // Alterar los datos de rol guardados en sesión no concede permisos.
     session_id($sesion);session_start();$_SESSION['rol']='ADMINISTRADOR';$_SESSION['permisos']=array_keys($catalogo);session_write_close();
     [$s]=au_http('api/proveedores_crear.php',['permisos'=>array_keys($catalogo),'rol'=>'ADMINISTRADOR']);
-    au_ok($s===403,'no confía en rol/permisos de sesión ni del cliente');
+    $esperado = in_array($catalogo['GESTIONAR_PROVEEDORES'], $permisosOriginales) ? 400 : 403;
+    au_ok($s===$esperado,'usa permisos reales ante rol/permisos falsos de sesión y cliente');
     $pid=au_q('SELECT id_proyecto FROM proyecto ORDER BY id_proyecto LIMIT 1')->fetchColumn();
     $bid=au_q('SELECT id_presupuesto FROM presupuesto WHERE id_proyecto=:id ORDER BY id_presupuesto LIMIT 1',['id'=>$pid])->fetchColumn();
     $aid=au_q('SELECT id_actividad FROM actividad WHERE id_proyecto=:id ORDER BY id_actividad LIMIT 1',['id'=>$pid])->fetchColumn();

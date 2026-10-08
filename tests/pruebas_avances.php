@@ -30,7 +30,7 @@ try {
     ob_start(); require __DIR__ . '/../config/database.local.php'; ob_end_clean(); $db = $conexion; $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     foreach (['actividad', 'fotografia_avance', 'bitacora', 'proyecto', 'usuario', 'cliente', 'proveedor', 'material', 'presupuesto', 'detalle_presupuesto', 'proyecto_empleado', 'solicitud_material', 'detalle_solicitud', 'compra', 'detalle_compra', 'factura', 'pago'] as $t) $originales[$t] = va_q($db, "SELECT md5(row_to_json(t)::text) AS r FROM $t t ORDER BY r")->fetchAll(PDO::FETCH_COLUMN);
     $u = va_q($db, 'SELECT id_empleado, id_rol FROM usuario ORDER BY id_usuario LIMIT 1')->fetch(PDO::FETCH_ASSOC); $clave = bin2hex(random_bytes(24));
-    $uid = va_q($db, "INSERT INTO usuario (nombre_usuario, contrasena, estado, id_empleado, id_rol) VALUES (:nombre, :clave, 'ACTIVO', :eid, :rid) RETURNING id_usuario", ['nombre' => $marca, 'clave' => $clave, 'eid' => $u['id_empleado'], 'rid' => $u['id_rol']])->fetchColumn();
+    $uid = va_q($db, "INSERT INTO usuario (nombre_usuario, contrasena, estado, id_empleado, id_rol) VALUES (:nombre, :clave, 'ACTIVO', :eid, :rid) RETURNING id_usuario", ['nombre' => $marca, 'clave' => password_hash($clave, PASSWORD_DEFAULT), 'eid' => $u['id_empleado'], 'rid' => $u['id_rol']])->fetchColumn();
     session_id($sesion); session_start(); session_write_close();
     [$s, $t] = va_http('api/login.php', json_encode(['usuario' => $marca, 'contrasena' => $clave])); va_ok($s === 200 && json_decode($t, true)['ok'], 'login real con usuario temporal'); unset($clave);
     [$s, $t] = va_http('api/sesion.php'); va_ok($s === 200 && json_decode($t, true)['activa'], 'sesión activa');

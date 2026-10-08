@@ -37,7 +37,7 @@ No se encontraron errores de FK en el flujo. La inspección actual no encontró 
 
 Pendientes manuales: aceptación visual con datos representativos y uso cotidiano en los navegadores del equipo; validación en el servidor de despliegue de las protecciones de archivos. Las pruebas automatizadas usaron Chrome y el servidor PHP local. Los archivos antiguos deben recuperarse desde una copia si se desea ver sus imágenes.
 
-El login todavía compara la contraseña con el valor almacenado del prototipo. Migrar a hashes requiere una tarea separada coordinada con las credenciales actuales. El antiguo registro pudo dejar datos en localStorage de navegadores usados anteriormente; no se alteró ese almacenamiento preexistente. No se añadieron operaciones CRUD que los módulos no ofrecían, como edición de pagos o eliminación de facturas.
+En esta revisión del 10 de septiembre el login aún comparaba contraseñas en texto plano. La migración a hashes se realizó posteriormente el 7 de octubre de 2026; consultar [Contraseñas seguras](contrasenas_seguras.md) para el estado y las pruebas actuales. El antiguo registro pudo dejar datos en localStorage de navegadores usados anteriormente; no se alteró ese almacenamiento preexistente. No se añadieron operaciones CRUD que los módulos no ofrecían, como edición de pagos o eliminación de facturas.
 
 Recomendación: realizar la aceptación manual del flujo probado y planificar el tratamiento de credenciales antes de continuar con módulos nuevos.
 

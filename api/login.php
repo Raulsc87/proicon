@@ -50,8 +50,8 @@ $sql = "
 ";
 
 try {
-    ob_start();
-    try { require __DIR__ . '/../config/database.local.php'; } finally { ob_end_clean(); }
+    require_once __DIR__ . '/autorizacion.php';
+    $conexion = autorizacion_conexion();
     $consulta = $conexion->prepare($sql);
 
     $consulta->execute([":usuario" => $usuario]);
@@ -62,7 +62,7 @@ try {
     echo json_encode(['ok' => false, 'mensaje' => 'No se pudo iniciar sesión. Intenta nuevamente.']); exit;
 }
 
-if (!$usuarioEncontrado) {
+if (!$usuarioEncontrado || !password_verify($contrasena, $usuarioEncontrado['contrasena'])) {
 
     http_response_code(401);
 
@@ -81,21 +81,6 @@ if ($usuarioEncontrado["estado"] !== "ACTIVO") {
     echo json_encode([
         "ok" => false,
         "mensaje" => "Este usuario está inactivo."
-    ]);
-
-    exit;
-}
-
-if (!hash_equals(
-    $usuarioEncontrado["contrasena"],
-    $contrasena
-)) {
-
-    http_response_code(401);
-
-    echo json_encode([
-        "ok" => false,
-        "mensaje" => "Usuario o contraseña incorrectos."
     ]);
 
     exit;

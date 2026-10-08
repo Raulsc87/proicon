@@ -33,7 +33,7 @@ try {
     foreach (['solicitud_material', 'detalle_solicitud', 'compra', 'detalle_compra', 'factura', 'pago', 'usuario', 'cliente', 'proveedor', 'material', 'proyecto', 'proyecto_empleado', 'presupuesto', 'detalle_presupuesto', 'actividad', 'bitacora', 'fotografia_avance'] as $tabla) $originales[$tabla] = aq($db, "SELECT row_to_json(t)::text AS r FROM $tabla t ORDER BY r")->fetchAll(PDO::FETCH_COLUMN);
     $base = aq($db, 'SELECT id_empleado, id_rol FROM usuario ORDER BY id_usuario LIMIT 1')->fetch(PDO::FETCH_ASSOC);
     $clave = bin2hex(random_bytes(24));
-    $uid = aq($db, "INSERT INTO usuario (nombre_usuario, contrasena, estado, id_empleado, id_rol) VALUES (:nombre, :clave, 'ACTIVO', :empleado, :rol) RETURNING id_usuario", ['nombre' => $marca, 'clave' => $clave, 'empleado' => $base['id_empleado'], 'rol' => $base['id_rol']])->fetchColumn();
+    $uid = aq($db, "INSERT INTO usuario (nombre_usuario, contrasena, estado, id_empleado, id_rol) VALUES (:nombre, :clave, 'ACTIVO', :empleado, :rol) RETURNING id_usuario", ['nombre' => $marca, 'clave' => password_hash($clave, PASSWORD_DEFAULT), 'empleado' => $base['id_empleado'], 'rol' => $base['id_rol']])->fetchColumn();
     session_id($sesion); session_start(); session_write_close();
     [$s] = http_adq('api/login.php'); ok($s === 405, 'login exige POST');
     foreach (['{', 'null', '{"usuario":[],"contrasena":"x"}'] as $entrada) {
