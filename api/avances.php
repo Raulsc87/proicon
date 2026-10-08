@@ -2,8 +2,7 @@
 require_once __DIR__ . '/proyectos_base.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
-session_start(); $usuario = $_SESSION['id_usuario'] ?? null; session_write_close();
-if (!$usuario) responder(['ok' => false, 'mensaje' => 'Inicia sesión nuevamente.'], 401);
+$usuario = requerir_sesion()['id_usuario'];
 
 function avance_error(string $mensaje, int $codigo = 400): never { responder(['ok' => false, 'mensaje' => $mensaje], $codigo); }
 function avance_fila(PDO $db, string $sql, array $params): array {
@@ -57,11 +56,12 @@ $escrituras = ['crear', 'editar', 'estado', 'foto_subir', 'foto_editar', 'foto_e
 $accion = $_GET['accion'] ?? '';
 if (!is_string($accion) || !in_array($accion, array_merge($lecturas, $escrituras), true)) avance_error('Operación no encontrada.', 404);
 $escribir = in_array($accion, $escrituras, true);
+requerir_permiso(($escribir ? 'GESTIONAR_' : 'VER_') . ((str_starts_with($accion, 'foto') || $accion === 'imagen') ? 'FOTOGRAFIAS' : 'ACTIVIDADES'));
 if ($_SERVER['REQUEST_METHOD'] !== ($escribir ? 'POST' : 'GET')) { header('Allow: ' . ($escribir ? 'POST' : 'GET')); avance_error('Método no permitido.', 405); }
 $db = null; $subida = null;
 ob_start();
 try {
-    require __DIR__ . '/../config/database.local.php'; ob_end_clean();
+    $conexion = autorizacion_conexion(); ob_end_clean();
     $db = $conexion; $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $d = $_GET;
     if ($escribir) {
@@ -141,6 +141,7 @@ try {
         $r = proyecto_guardar($db, 'fotografia_avance', ['ruta_archivo' => $ruta, 'descripcion' => $descripcion, 'fecha_carga' => $fecha, 'id_bitacora' => $b['id_bitacora']]);
         $db->commit();
     }
+    if ($accion === 'listar' && !usuario_tiene_permiso('GESTIONAR_ACTIVIDADES') && !usuario_tiene_permiso('VER_EMPLEADOS_PROYECTO')) $r['empleados'] = [];
     responder(['ok' => true, 'datos' => $r], in_array($accion, ['crear', 'foto_subir'], true) ? 201 : 200);
 } catch (Throwable $e) {
     if (ob_get_level()) ob_end_clean();

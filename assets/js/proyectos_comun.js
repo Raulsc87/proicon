@@ -59,6 +59,8 @@ const Proicon = (() => {
             }
             const td = document.createElement('td'); td.className = 'acciones';
             for (const [texto, accion] of acciones(r)) {
+                const modulo = {empleados:'EMPLEADOS_PROYECTO',presupuestos:'PRESUPUESTOS',detalles:'PRESUPUESTOS',filas:'PROYECTOS'}[id];
+                if (modulo && !['Consultar','Abrir presupuesto','Ver proyecto'].includes(texto) && !Autorizacion.puede('GESTIONAR_'+modulo)) continue;
                 const b = document.createElement('button'); b.type = 'button'; b.textContent = texto;
                 b.addEventListener('click', () => operar(accion)); td.append(b);
             }

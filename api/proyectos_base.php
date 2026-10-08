@@ -56,12 +56,14 @@ function proyecto_guardar(PDO $db, string $tabla, array $valores, string $where 
     return $r;
 }
 function proyectos_api(string $accion): void {
+    if ($accion === 'catalogos') requerir_alguno(['VER_PROYECTOS', 'VER_EMPLEADOS_PROYECTO', 'VER_PRESUPUESTOS', 'GESTIONAR_PROYECTOS', 'GESTIONAR_EMPLEADOS_PROYECTO', 'GESTIONAR_PRESUPUESTOS']);
+    else {
+        $modulo = str_starts_with($accion, 'empleados_') ? 'EMPLEADOS_PROYECTO' : ((str_starts_with($accion, 'presupuestos_') || str_starts_with($accion, 'detalles_')) ? 'PRESUPUESTOS' : 'PROYECTOS');
+        requerir_permiso((in_array($accion, ['listar', 'obtener', 'empleados_listar', 'presupuestos_listar', 'presupuestos_obtener'], true) ? 'VER_' : 'GESTIONAR_') . $modulo);
+    }
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
-    session_start();
-    $usuario = $_SESSION['id_usuario'] ?? null;
-    session_write_close();
-    if (!$usuario) responder(['ok' => false, 'mensaje' => 'Inicia sesión nuevamente.'], 401);
+    $usuario = requerir_sesion()['id_usuario'];
     $lecturas = ['catalogos', 'listar', 'obtener', 'empleados_listar', 'presupuestos_listar', 'presupuestos_obtener'];
     $metodo = in_array($accion, $lecturas, true) ? 'GET' : 'POST';
     if ($_SERVER['REQUEST_METHOD'] !== $metodo) {
@@ -71,7 +73,7 @@ function proyectos_api(string $accion): void {
     $db = null;
     ob_start();
     try {
-        require __DIR__ . '/../config/database.local.php';
+        $conexion = autorizacion_conexion();
         ob_end_clean();
         $db = $conexion;
         $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -152,6 +154,11 @@ function proyectos_api(string $accion): void {
                     }
                 }
             } else responder(['ok' => false, 'mensaje' => 'Operación no encontrada.'], 404);
+        }
+        if ($accion === 'catalogos') {
+            if (!usuario_tiene_permiso('VER_CLIENTES') && !usuario_tiene_permiso('GESTIONAR_PROYECTOS')) $r['clientes'] = [];
+            if (!usuario_tiene_permiso('VER_EMPLEADOS_PROYECTO') && !usuario_tiene_permiso('GESTIONAR_EMPLEADOS_PROYECTO')) $r['empleados'] = [];
+            if (!usuario_tiene_permiso('VER_MATERIALES') && !usuario_tiene_permiso('GESTIONAR_PRESUPUESTOS')) $r['materiales'] = [];
         }
         responder(['ok' => true, 'datos' => $r, 'mensaje' => 'Operación completada.'], str_ends_with($accion, 'crear') ? 201 : 200);
     } catch (Throwable $e) {

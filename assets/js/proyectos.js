@@ -1,5 +1,7 @@
-(() => {
+(async () => {
+    if (!await Autorizacion.lista) return;
     const {el, api, operar, opciones, abrir, tabla, enviar, informar} = Proicon;
+    Autorizacion.marcar(el('nuevo'), 'GESTIONAR_PROYECTOS');
     let id = null, estadoId = null, solicitud = 0;
     async function listar() {
         const turno = ++solicitud;

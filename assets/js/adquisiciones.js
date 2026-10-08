@@ -1,9 +1,13 @@
-(() => {
+(async () => {
     'use strict';
+    if (!await Autorizacion.lista) return;
     const root = document.getElementById('adquisiciones');
     if (!root) return;
     const params = new URLSearchParams(location.search);
     const vista = root.dataset.vista;
+    const puede = Autorizacion.puede;
+    const modulo = {proyecto:'SOLICITUDES',solicitud:'SOLICITUDES',compra:'COMPRAS',factura:'FACTURAS'}[vista];
+    if (!puede('VER_' + modulo)) { root.classList.add('sin-permiso'); return; }
     const pid = params.get(vista === 'proyecto' ? 'id' : 'proyecto');
     const id = params.get('id');
     let cat, actual, ocupado = false;
@@ -41,10 +45,23 @@
     }
     function boton(texto, fn, padre, deshabilitado = false) {
         const b = nodo('button', texto); b.type = 'button'; b.disabled = deshabilitado;
+        const permiso = {
+            'Consultar': 'VER_' + modulo, 'Abrir solicitud':'VER_SOLICITUDES', 'Abrir compra':'VER_COMPRAS',
+            'Factura / pagos':'VER_FACTURAS', 'Archivo':'VER_FACTURAS', 'Descargar factura':'VER_FACTURAS', 'Comprobante':'VER_PAGOS',
+            '+ Nueva solicitud':'GESTIONAR_SOLICITUDES', 'Revisar solicitud':'GESTIONAR_SOLICITUDES',
+            '+ Crear compra':'GESTIONAR_COMPRAS', '+ Registrar factura':'GESTIONAR_FACTURAS', '+ Registrar pago':'GESTIONAR_PAGOS'
+        }[texto] || 'GESTIONAR_' + modulo;
+        Autorizacion.marcar(b, permiso);
         b.addEventListener('click', () => operar(fn)); padre.append(b); return b;
     }
-    function enlace(texto, href, padre) { const a = nodo('a', texto); a.href = href; padre.append(a); return a; }
-    function panel(titulo) { const p = nodo('section', null, 'panel-mantenimiento'); p.append(nodo('h2', titulo)); root.append(p); return p; }
+    function enlace(texto, href, padre) { const a = nodo('a', texto); a.href = href; padre.append(a);
+        const pagina = href.split('?')[0];
+        const permiso = {'proyectos.html':'VER_PROYECTOS','proyecto_detalle.html':'VER_PROYECTOS','solicitud_detalle.html':'VER_SOLICITUDES','compra_detalle.html':'VER_COMPRAS'}[pagina];
+        if (permiso) Autorizacion.marcar(a, permiso); return a; }
+    function panel(titulo) { const p = nodo('section', null, 'panel-mantenimiento'); p.append(nodo('h2', titulo)); root.append(p);
+        const permiso = {'Compras de la solicitud':'VER_COMPRAS',Facturas:'VER_FACTURAS',Pagos:'VER_PAGOS'}[titulo];
+        if (permiso) Autorizacion.marcar(p, permiso);
+        return p; }
     function datos(padre, registro, campos) {
         const dl = nodo('dl', null, 'datos-proyecto');
         for (const [etiqueta, valor] of campos) dl.append(nodo('dt', etiqueta), nodo('dd', typeof valor === 'function' ? valor(registro) : registro[valor] ?? '—'));
@@ -176,7 +193,7 @@
         const p = panel('Factura ' + r.numero_factura);
         datos(p, r, [['Proyecto', () => cat.proyecto.nombre], ['Compra', 'compra'], ['Fecha', 'fecha_factura'], ['Estado registrado', 'estado'], ['Registrada por', 'registrador']]);
         if (r.ruta_archivo) boton('Descargar factura', () => descargar(r.id_factura), p); else p.append(nodo('p', 'Sin archivo adjunto.'));
-        resumen(p, [['Monto factura', money(r.monto_total)], ['Total pagado', money(r.total_pagado)], ['Saldo pendiente', money(r.saldo)]]);
+        resumen(p, [['Monto factura', money(r.monto_total)], ...(puede('VER_PAGOS') ? [['Total pagado', money(r.total_pagado)], ['Saldo pendiente', money(r.saldo)]] : [])]);
         if (Number(r.saldo) <= 0) p.append(nodo('p', 'PAGADA' + (Number(r.saldo) < 0 ? ' · Existe un excedente de pago.' : ''), 'correcto'));
         const pagos = panel('Pagos');
         const campos = [{...texto('tipo_pago', 'Tipo de pago', 30, true), sugerencias: cat.tipos_pago}, texto('numero_operacion', 'Número de operación', 100), fecha('fecha_pago', 'Fecha'), numero('monto', 'Monto (Q)'), archivo, observaciones];

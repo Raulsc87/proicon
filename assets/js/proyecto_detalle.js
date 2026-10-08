@@ -1,5 +1,10 @@
-(() => {
+(async () => {
+    if (!await Autorizacion.lista) return;
     const {el, api, operar, opciones, abrir, tabla, enviar, informar, dinero, hoy} = Proicon;
+    const puede = Autorizacion.puede;
+    for (const [id, modulo] of [['asignar','EMPLEADOS_PROYECTO'],['nuevoPresupuesto','PRESUPUESTOS'],['agregarDetalle','PRESUPUESTOS']]) Autorizacion.marcar(el(id), 'GESTIONAR_'+modulo);
+    if (!puede('VER_EMPLEADOS_PROYECTO')) el('empleados').closest('section').classList.add('sin-permiso');
+    if (!puede('VER_PRESUPUESTOS')) el('presupuestos').closest('section').classList.add('sin-permiso');
     const pid = new URLSearchParams(location.search).get('id');
     let empleadoId = null, presupuestoId = null, presupuestoEditarId = null, detalleId = null, catalogos, presupuestos = [];
     const leer = (accion, extra = {}) => api(accion, null, {id_proyecto: pid, ...extra});
@@ -69,9 +74,9 @@
         }
         opciones('estado_empleado', c.estados_empleado); opciones('estado_presupuesto', c.estados_presupuesto);
         opciones('id_categoria_costo', c.categorias, 'id_categoria_costo', 'nombre'); opciones('id_material', c.materiales, 'id_material', 'nombre', true);
-        await Promise.all([cargarEmpleados(), cargarPresupuestos()]); el('centroProyecto').hidden = false;
+        await Promise.all([puede('VER_EMPLEADOS_PROYECTO') ? cargarEmpleados() : null, puede('VER_PRESUPUESTOS') ? cargarPresupuestos() : null]); el('centroProyecto').hidden = false;
         const seleccionado = new URLSearchParams(location.search).get('presupuesto');
-        if (seleccionado !== null) {
+        if (seleccionado !== null && puede('VER_PRESUPUESTOS')) {
             if (!presupuestos.some(p => String(p.id_presupuesto) === seleccionado)) throw new Error('El presupuesto no pertenece a este proyecto o ya no está disponible.');
             await cargarDetalles(seleccionado);
             el('detallePresupuesto').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'});

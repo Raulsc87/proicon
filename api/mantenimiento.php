@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/autorizacion.php';
 // Identificadores SQL definidos únicamente por los endpoints del servidor.
 function responder(array $datos, int $estado = 200): never {
     http_response_code($estado);
@@ -7,13 +8,10 @@ function responder(array $datos, int $estado = 200): never {
 }
 
 function mantenimiento(array $config, string $accion): void {
+    $modulo = ['cliente' => 'CLIENTES', 'proveedor' => 'PROVEEDORES', 'material' => 'MATERIALES'][$config['tabla']];
+    requerir_permiso((in_array($accion, ['listar', 'obtener', 'unidades'], true) ? 'VER_' : 'GESTIONAR_') . $modulo);
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
-    session_start();
-    if (!isset($_SESSION['id_usuario'])) {
-        responder(['ok' => false, 'mensaje' => 'La sesión ha terminado. Inicia sesión nuevamente.'], 401);
-    }
-    session_write_close();
     $metodo = in_array($accion, ['listar', 'obtener', 'unidades'], true) ? 'GET' : 'POST';
     if ($_SERVER['REQUEST_METHOD'] !== $metodo) {
         header('Allow: ' . $metodo);
@@ -22,7 +20,7 @@ function mantenimiento(array $config, string $accion): void {
     // Evita que una inclusión con salida accidental exponga detalles de conexión.
     ob_start();
     try {
-        require __DIR__ . '/../config/database.local.php';
+        $conexion = autorizacion_conexion();
         ob_end_clean();
         $conexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $tabla = $config['tabla'];

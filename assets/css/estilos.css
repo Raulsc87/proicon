@@ -459,6 +459,9 @@ body {
 }
 
 /* TARJETAS */
+.sin-permiso { display: none !important; }
+html:not(.acceso-listo) .body-dashboard .contenido,
+html:not(.acceso-listo) .body-dashboard .menu nav { visibility: hidden; }
 
 .tarjetas {
     display: grid;

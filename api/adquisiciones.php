@@ -2,10 +2,7 @@
 require_once __DIR__ . '/proyectos_base.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
-session_start();
-$usuario = $_SESSION['id_usuario'] ?? null;
-session_write_close();
-if (!$usuario) responder(['ok' => false, 'mensaje' => 'Inicia sesión nuevamente.'], 401);
+$usuario = requerir_sesion()['id_usuario'];
 
 function adquisicion_error(string $mensaje, int $codigo = 400): never {
     responder(['ok' => false, 'mensaje' => $mensaje], $codigo);
@@ -57,11 +54,21 @@ $escrituras = ['solicitudes_crear', 'solicitudes_revisar', 'solicitud_detalle_gu
 $accion = $_GET['accion'] ?? '';
 if (!is_string($accion) || !in_array($accion, array_merge($lecturas, $escrituras), true)) adquisicion_error('Operación no encontrada.', 404);
 $escribir = in_array($accion, $escrituras, true);
+if ($accion === 'catalogos') requerir_alguno(['VER_SOLICITUDES','VER_COMPRAS','VER_FACTURAS','VER_PAGOS','GESTIONAR_SOLICITUDES','GESTIONAR_COMPRAS','GESTIONAR_FACTURAS','GESTIONAR_PAGOS']);
+else {
+    $modulo = match (true) {
+        $accion === 'archivo' => isset($_GET['id_pago']) ? 'PAGOS' : 'FACTURAS',
+        str_starts_with($accion, 'solicitud') => 'SOLICITUDES',
+        str_starts_with($accion, 'compra') => 'COMPRAS',
+        str_starts_with($accion, 'factura') => 'FACTURAS', default => 'PAGOS'
+    };
+    requerir_permiso(($escribir ? 'GESTIONAR_' : 'VER_') . $modulo);
+}
 if ($_SERVER['REQUEST_METHOD'] !== ($escribir ? 'POST' : 'GET')) { header('Allow: ' . ($escribir ? 'POST' : 'GET')); adquisicion_error('Método no permitido.', 405); }
 $db = null; $subido = null;
 ob_start();
 try {
-    require __DIR__ . '/../config/database.local.php';
+    $conexion = autorizacion_conexion();
     ob_end_clean();
     $db = $conexion;
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -176,6 +183,17 @@ try {
             $r = adquisicion_insertar($db, 'pago', $v + ['ruta_comprobante' => $subido]);
         }
     }
+    if ($accion === 'catalogos') {
+        if (!usuario_tiene_permiso('VER_MATERIALES') && !usuario_tiene_permiso('GESTIONAR_SOLICITUDES') && !usuario_tiene_permiso('GESTIONAR_COMPRAS')) $r['materiales'] = [];
+        if (!usuario_tiene_permiso('VER_PROVEEDORES') && !usuario_tiene_permiso('GESTIONAR_COMPRAS')) $r['proveedores'] = [];
+        if (!usuario_tiene_permiso('VER_PAGOS') && !usuario_tiene_permiso('GESTIONAR_PAGOS')) $r['tipos_pago'] = [];
+    }
+    if ($accion === 'solicitudes_obtener' && !usuario_tiene_permiso('VER_COMPRAS')) $r['compras'] = [];
+    if ($accion === 'compras_obtener') {
+        if (!usuario_tiene_permiso('VER_FACTURAS')) $r['facturas'] = [];
+        elseif (!usuario_tiene_permiso('VER_PAGOS')) foreach ($r['facturas'] as &$factura) { unset($factura['total_pagado'], $factura['saldo']); }
+    }
+    if ($accion === 'facturas_obtener' && !usuario_tiene_permiso('VER_PAGOS')) { $r['pagos'] = []; unset($r['total_pagado'], $r['saldo']); }
     if ($escribir) $db->commit();
     responder(['ok' => true, 'datos' => $r], str_ends_with($accion, '_crear') ? 201 : 200);
 } catch (Throwable $e) {

@@ -1,5 +1,6 @@
-(() => {
+(async () => {
     'use strict';
+    if (!await Autorizacion.lista) return;
     const {el, api, solicitar, dinero, informar} = Proicon;
     const vista = document.querySelector('[data-resumen]').dataset.resumen;
     const crear = (tag, texto = '', clase = '') => {

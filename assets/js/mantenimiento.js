@@ -1,4 +1,7 @@
-function iniciarMantenimiento(config) {
+async function iniciarMantenimiento(config) {
+    if (!await Autorizacion.lista) return;
+    const gestionar = Autorizacion.puede("GESTIONAR_" + config.modulo.toUpperCase());
+    Autorizacion.marcar(document.getElementById("nuevo"), "GESTIONAR_" + config.modulo.toUpperCase());
     const formulario = document.getElementById("formulario");
     const editor = document.getElementById("editor");
     const mensaje = document.getElementById("mensajeModulo");
@@ -50,6 +53,7 @@ function iniciarMantenimiento(config) {
                 const acciones = document.createElement("td");
                 acciones.className = "acciones";
                 for (const accion of ["Ver", "Editar", ...(config.columnas.includes("estado") ? [registro.estado === "ACTIVO" ? "Desactivar" : "Reactivar"] : [])]) {
+                    if (accion !== "Ver" && !gestionar) continue;
                     const boton = document.createElement("button");
                     boton.type = "button";
                     boton.textContent = accion;

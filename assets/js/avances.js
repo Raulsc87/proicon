@@ -1,5 +1,8 @@
-(() => {
+(async () => {
     'use strict';
+    if (!await Autorizacion.lista) return;
+    const puede = Autorizacion.puede;
+    if (!puede('VER_ACTIVIDADES') && !puede('VER_FOTOGRAFIAS')) return;
     const pid = new URLSearchParams(location.search).get('id');
     const n = (tag, text = '', cls = '') => { const e = document.createElement(tag); e.textContent = text; if (cls) e.className = cls; return e; };
     const actividades = n('section', '', 'panel-mantenimiento avances'); actividades.id = 'actividadesProyecto';
@@ -10,7 +13,10 @@
     document.getElementById('adquisiciones').after(evidencia);
     const mensaje = n('p', '', 'mensaje'); mensaje.setAttribute('role', 'status');
     actividades.append(n('h2', 'Actividades del proyecto'), mensaje);
-    let catalogos, ocupado = false, siguiente = null, fotosCargadas = false;
+    actividades.classList.toggle('sin-permiso', !puede('VER_ACTIVIDADES'));
+    avance.classList.toggle('sin-permiso', !puede('VER_ACTIVIDADES'));
+    evidencia.classList.toggle('sin-permiso', !puede('VER_FOTOGRAFIAS'));
+    let catalogos = {formatos_foto: ['jpg','jpeg','png','webp']}, ocupado = false, siguiente = null, fotosCargadas = false;
     async function api(accion, datos = null, extra = {}) {
         let body;
         if (datos instanceof FormData) { datos.set('id_proyecto', pid); body = datos; }
@@ -32,7 +38,11 @@
             destino.textContent = e.message; destino.className = 'mensaje error';
         } finally { ocupado = false; botones.forEach(b => { b.disabled = false; }); }
     }
-    function boton(txt, fn, parent) { const b = n('button', txt); b.type = 'button'; b.addEventListener('click', () => operar(fn)); parent.append(b); return b; }
+    function boton(txt, fn, parent, modulo = 'ACTIVIDADES') {
+        const b = n('button', txt); b.type = 'button'; b.addEventListener('click', () => operar(fn)); parent.append(b);
+        if (!['Consultar', 'Cerrar', 'Cargar más fotografías'].includes(txt)) Autorizacion.marcar(b, 'GESTIONAR_' + modulo);
+        return b;
+    }
     function campo(name, label, type = 'text', extra = {}) { return {name, label, type, ...extra}; }
     function dialogo(titulo, campos, valores = {}, guardar = null, padre = actividades) {
         const d = n('dialog'), h = n('h2', titulo), f = n('form'), grid = n('fieldset', '', 'campos-mantenimiento'), status = n('p', '', 'mensaje');
@@ -93,7 +103,7 @@
         nueva.disabled = false;
     }
     evidencia.append(n('h2', 'Evidencia fotográfica'));
-    const subir = boton('+ Subir foto', () => dialogo('Subir fotografía de avance', [campo('archivo', 'Imagen (máximo 2 MB)', 'file', {required: true}), campo('descripcion', 'Descripción', 'textarea', {maxLength: 250})], {}, fd => guardarFoto('foto_subir', fd, 'Fotografía subida.'), evidencia), evidencia); subir.disabled = true;
+    const subir = boton('+ Subir foto', () => dialogo('Subir fotografía de avance', [campo('archivo', 'Imagen (máximo 2 MB)', 'file', {required: true}), campo('descripcion', 'Descripción', 'textarea', {maxLength: 250})], {}, fd => guardarFoto('foto_subir', fd, 'Fotografía subida.'), evidencia), evidencia, 'FOTOGRAFIAS'); subir.disabled = true;
     evidencia.append(n('p', 'La fecha y el usuario se registran automáticamente.'));
     const desplegable = n('details'), sum = n('summary', 'Ver fotografías del proyecto'), galeria = n('div', '', 'galeria-avance'), estadoFotos = n('p');
     estadoFotos.setAttribute('role', 'status');
@@ -148,8 +158,8 @@
             img.addEventListener('error', () => { img.hidden = true; card.prepend(n('p', 'Imagen no disponible')); }, {once: true});
             card.append(img, n('p', f.descripcion || 'Sin descripción'), n('p', f.fecha_carga + ' · ' + f.registrada_por));
             boton('Consultar', () => verFoto(f), card);
-            boton('Editar', () => editarFoto(f), card);
-            boton('Eliminar', () => eliminarFoto(f), card);
+            boton('Editar', () => editarFoto(f), card, 'FOTOGRAFIAS');
+            boton('Eliminar', () => eliminarFoto(f), card, 'FOTOGRAFIAS');
             galeria.append(card);
         }
         fotosCargadas = true; siguiente = r.siguiente; mas.hidden = !siguiente; mas.textContent = 'Cargar más fotografías'; estadoFotos.className = 'mensaje'; estadoFotos.textContent = galeria.children.length ? '' : 'Todavía no hay fotografías.';
@@ -157,6 +167,6 @@
     desplegable.addEventListener('toggle', () => { if (desplegable.open && !fotosCargadas) operar(() => cargarFotos(true)); });
     operar(async () => {
         if (!/^[1-9]\d*$/.test(pid || '')) throw new Error('Identificador de proyecto inválido.');
-        await cargar(); subir.disabled = false;
+        if (puede('VER_ACTIVIDADES')) await cargar(); subir.disabled = false;
     });
 })();
