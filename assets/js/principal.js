@@ -46,6 +46,8 @@ async function cargarSesion() {
             return false;
         }
         nombreUsuario.textContent = datos.usuario.nombre;
+        const rolVisible = document.getElementById('rolUsuario');
+        if (rolVisible) rolVisible.textContent = datos.usuario.rol;
         return Autorizacion.aplicar(datos.usuario);
     } catch (error) {
         window.location.replace("index.html");
