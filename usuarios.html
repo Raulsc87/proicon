@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROICON - Usuarios</title>
+    <link rel="stylesheet" href="assets/css/estilos.css">
+    <link rel="stylesheet" href="assets/css/corporativo.css">
+    <link rel="stylesheet" href="assets/css/usuarios.css">
+</head>
+<body class="body-dashboard">
+<div class="dashboard">
+    <aside class="menu">
+        <span class="marca"><img src="assets/img/logo-proicon.jpeg" alt="PROICON - Proyectos Ingeniería y Construcción" width="1179" height="1510"></span>
+        <p class="texto-usuario">Usuario:</p>
+        <p id="nombreUsuario" class="usuario"></p><p id="rolUsuario" class="rol-usuario"></p>
+        <nav><a href="principal.html">Inicio</a><a href="clientes.html">Clientes</a><a href="proveedores.html">Proveedores</a><a href="materiales.html">Materiales</a><a href="proyectos.html">Proyectos</a></nav>
+        <button id="botonCerrarSesion">Cerrar sesión</button>
+    </aside>
+    <main class="contenido mantenimiento usuarios">
+        <h1>Administración de usuarios</h1>
+        <p class="subtitulo">Cuentas, roles y acceso del personal de PROICON.</p>
+        <p id="mensajeModulo" class="mensaje" role="status" aria-live="polite"></p>
+        <div class="barra-mantenimiento">
+            <button id="nuevo" type="button" data-permiso="GESTIONAR_USUARIOS">+ Nuevo usuario</button>
+            <form id="busqueda" class="busqueda"><label for="buscar">Buscar por usuario o empleado</label><input id="buscar" type="search" maxlength="120"><button>Buscar</button></form>
+        </div>
+        <section id="editor" class="panel-mantenimiento" hidden>
+            <h2 id="tituloEditor">Nuevo usuario</h2>
+            <form id="formulario">
+                <div class="campos-mantenimiento">
+                    <div class="grupo"><label for="empleado">Empleado *</label><select id="empleado" required></select></div>
+                    <div class="grupo"><label for="nombreCuenta">Usuario *</label><input id="nombreCuenta" maxlength="50" autocomplete="off" required></div>
+                    <div class="grupo"><label for="rol">Rol *</label><select id="rol" required></select></div>
+                    <div class="grupo"><label for="estado">Estado *</label><select id="estado"><option>ACTIVO</option><option>INACTIVO</option></select></div>
+                    <div id="claveInicial" class="grupo"><label for="clave">Contraseña inicial *</label><input id="clave" type="password" minlength="8" maxlength="72" autocomplete="new-password"><small>Entre 8 y 72 bytes. No se muestra la contraseña actual.</small></div>
+                    <div id="confirmacionInicial" class="grupo"><label for="confirmacion">Confirmar contraseña *</label><input id="confirmacion" type="password" minlength="8" maxlength="72" autocomplete="new-password"></div>
+                </div>
+                <p id="mensajeEditor" class="mensaje error" role="alert"></p>
+                <button id="guardar">Guardar</button><button id="cancelar" type="button">Cancelar</button>
+            </form>
+        </section>
+        <section id="editorClave" class="panel-mantenimiento" hidden>
+            <h2>Cambiar contraseña</h2><p id="cuentaClave"></p>
+            <form id="formularioClave">
+                <div class="campos-mantenimiento">
+                    <div class="grupo"><label for="nuevaClave">Nueva contraseña *</label><input id="nuevaClave" type="password" minlength="8" maxlength="72" autocomplete="new-password" required></div>
+                    <div class="grupo"><label for="confirmarClave">Confirmar contraseña *</label><input id="confirmarClave" type="password" minlength="8" maxlength="72" autocomplete="new-password" required></div>
+                </div>
+                <p id="mensajeClave" class="mensaje error" role="alert"></p>
+                <button id="guardarClave">Guardar cambios</button><button id="cancelarClave" type="button">Cancelar</button>
+            </form>
+        </section>
+        <section id="consulta" class="panel-mantenimiento" hidden><h2>Consultar usuario</h2><dl id="datosConsulta"></dl><button id="cerrarConsulta" type="button">Cerrar</button></section>
+        <div class="tabla-contenedor panel-mantenimiento"><table><caption class="solo-lectores">Usuarios de PROICON</caption><thead><tr><th>Usuario</th><th>Empleado</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="filas"></tbody></table><p id="estadoLista" role="status">Cargando usuarios...</p></div>
+    </main>
+</div>
+<script src="assets/js/principal.js"></script>
+<script src="assets/js/usuarios.js"></script>
+    <script src="assets/js/presentacion.js"></script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+# Apache: la vista de usuarios pasa por autorización PHP antes de servir HTML.
+RewriteEngine On
+RewriteRule ^usuarios\.html$ api/usuarios_pagina.php [END,NC]

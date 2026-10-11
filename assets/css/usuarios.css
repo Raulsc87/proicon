@@ -1,0 +1,7 @@
+.usuarios table { min-width: 1060px; }
+.usuarios td { overflow-wrap: normal; word-break: normal; }
+.usuarios td:nth-child(1), .usuarios td:nth-child(3), .usuarios td:nth-child(4) { white-space: nowrap; }
+.usuarios .acciones { min-width: 330px; }
+.usuarios #datosConsulta { display: grid; grid-template-columns: minmax(100px, 1fr) 3fr; gap: 12px; }
+.usuarios #datosConsulta dt { font-weight: 600; }
+.usuarios #datosConsulta dd { margin: 0; overflow-wrap: anywhere; }
