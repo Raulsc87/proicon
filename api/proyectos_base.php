@@ -115,7 +115,7 @@ function proyectos_api(string $accion): void {
             if (!$proyecto) responder(['ok' => false, 'mensaje' => 'Proyecto no encontrado.'], 404);
             if ($accion === 'obtener') $r = $proyecto;
             elseif ($accion === 'empleados_listar') {
-                $r = proyecto_query($db, "SELECT pe.*, e.nombres || ' ' || e.apellidos AS nombre, e.telefono FROM proyecto_empleado pe JOIN empleado e USING (id_empleado) WHERE pe.id_proyecto = :id ORDER BY e.nombres, e.apellidos", ['id' => $pid])->fetchAll(PDO::FETCH_ASSOC);
+                $r = proyecto_query($db, "SELECT pe.*, e.estado AS estado_global_empleado, e.nombres || ' ' || e.apellidos AS nombre, e.telefono FROM proyecto_empleado pe JOIN empleado e USING (id_empleado) WHERE pe.id_proyecto = :id ORDER BY e.nombres, e.apellidos", ['id' => $pid])->fetchAll(PDO::FETCH_ASSOC);
             } elseif (in_array($accion, ['empleados_crear', 'empleados_editar'], true)) {
                 $eid = proyecto_id($d['id_empleado'] ?? null);
                 $v = ['funcion_en_proyecto' => proyecto_texto($d, 'funcion_en_proyecto', 100), 'fecha_asignacion' => proyecto_fecha($d, 'fecha_asignacion'), 'estado' => proyecto_estado($db, $d, 'proyecto_empleado')];

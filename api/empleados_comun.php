@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/autorizacion.php';
+require_once __DIR__.'/empleados_guardar.php';
 
 function empleados_puede_gestionar(): bool {
     return usuario_tiene_permiso('GESTIONAR_EMPLEADOS');
@@ -23,8 +24,12 @@ function empleados_ejecutar(string $accion): void {
             $buscar=$_GET['buscar'] ?? '';
             if (!is_string($buscar) || strlen($buscar)>500) autorizacion_error(400, 'Búsqueda inválida.');
             $buscar='%'.str_replace(['!','%','_'],['!!','!%','!_'],trim($buscar)).'%';
-            $sql="SELECT $columnas FROM empleado WHERE nombres ILIKE :n ESCAPE '!' OR apellidos ILIKE :a ESCAPE '!' OR correo ILIKE :c ESCAPE '!' ORDER BY id_empleado DESC";
+            $estado=$_GET['estado'] ?? 'TODOS';
+            if (!in_array($estado,['ACTIVO','INACTIVO','TODOS'],true)) autorizacion_error(400,'Filtro de estado inválido.');
+            $sql="SELECT $columnas FROM empleado WHERE (nombres ILIKE :n ESCAPE '!' OR apellidos ILIKE :a ESCAPE '!' OR correo ILIKE :c ESCAPE '!')";
             $params=['n'=>$buscar,'a'=>$buscar,'c'=>$buscar];
+            if ($estado!=='TODOS') { $sql.=' AND estado=:estado'; $params['estado']=$estado; }
+            $sql.=' ORDER BY id_empleado DESC';
         } else {
             if ($accion !== 'crear') {
                 $id=filter_var($lectura ? ($_GET['id'] ?? null) : ($datos['id'] ?? null),FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
@@ -54,11 +59,22 @@ function empleados_ejecutar(string $accion): void {
                 }
             }
         }
-        $q=$db->prepare($sql);$q->execute($params);
-        $r=$accion==='listar'?$q->fetchAll(PDO::FETCH_ASSOC):$q->fetch(PDO::FETCH_ASSOC);
+        $advertencia=null;
+        if ($lectura) {
+            $q=$db->prepare($sql);$q->execute($params);
+            $r=$accion==='listar'?$q->fetchAll(PDO::FETCH_ASSOC):$q->fetch(PDO::FETCH_ASSOC);
+        } else {
+            $db->beginTransaction();
+            $guardado=empleados_guardar($db,$sql,$params,$accion);
+            $r=$guardado['datos'];$advertencia=$guardado['advertencia'];
+            $db->commit();
+        }
         if ($r===false) autorizacion_error(404,'Empleado no encontrado.');
         http_response_code($accion==='crear'?201:200);
-        echo json_encode(['ok'=>true,'datos'=>$r,'gestionar'=>empleados_puede_gestionar(),'mensaje'=>'Empleado guardado correctamente.'],JSON_UNESCAPED_UNICODE);
+        echo json_encode(['ok'=>true,'datos'=>$r,'gestionar'=>empleados_puede_gestionar(),'mensaje'=>'Empleado guardado correctamente.','advertencia'=>$advertencia],JSON_UNESCAPED_UNICODE);
     } catch (JsonException $e) { autorizacion_error(400,'JSON inválido.'); }
-    catch (Throwable $e) { autorizacion_error(500,'No se pudo completar la operación. Intenta nuevamente.'); }
+    catch (Throwable $e) {
+        if (isset($db) && $db->inTransaction()) $db->rollBack();
+        autorizacion_error(500,'No se pudo completar la operación. Intenta nuevamente.');
+    }
 }

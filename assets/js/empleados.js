@@ -39,7 +39,8 @@ async function iniciarEmpleados(config) {
         const version = ++versionLista;
         estadoLista.textContent = "Cargando…";
         try {
-            const resultado = await solicitar("listar", null, "?buscar=" + encodeURIComponent(document.getElementById("buscar").value.trim()));
+            const filtros = new URLSearchParams({buscar:document.getElementById("buscar").value.trim(), estado:document.getElementById("filtroEstado").value});
+            const resultado = await solicitar("listar", null, "?" + filtros);
             if (version !== versionLista) return;
             gestionar = Autorizacion.puede('GESTIONAR_EMPLEADOS') && resultado.gestionar === true;
             document.getElementById("nuevo").hidden = !gestionar;
@@ -57,16 +58,17 @@ async function iniciarEmpleados(config) {
                     if (accion !== "Ver" && !gestionar) continue;
                     const boton = document.createElement("button");
                     boton.type = "button";
-                    boton.textContent = accion === "Ver" ? "Consultar" : accion;
+                    boton.textContent = accion === "Ver" ? "Consultar" : accion === "Desactivar" ? "Dar de baja" : accion;
+                    if (accion === "Desactivar") boton.classList.add('dar-baja');
                     boton.addEventListener("click", () => operar(async () => {
                         if (accion === "Ver" || accion === "Editar") {
                             const resultado = await solicitar("obtener", null, "?id=" + encodeURIComponent(registro[config.id]));
                             abrir(resultado.datos, accion === "Ver");
                         } else {
-                            if (!confirm(accion + " este registro?")) return;
+                            if (!confirm('¿' + boton.textContent + ' este empleado?' + (accion === 'Desactivar' ? ' Sus asignaciones activas también pasarán a INACTIVO. Su cuenta de usuario no se modificará.' : ' Las asignaciones antiguas no se reactivarán automáticamente.'))) return;
                             const resultado = await solicitar("estado", { id: registro[config.id], estado: accion === "Desactivar" ? "INACTIVO" : "ACTIVO" });
                             cerrar();
-                            informar(resultado.mensaje);
+                            informar([resultado.mensaje, resultado.advertencia].filter(Boolean).join(' '));
                             await listar();
                         }
                     }));
@@ -116,16 +118,17 @@ async function iniciarEmpleados(config) {
     document.getElementById("nuevo").addEventListener("click", () => { if (!ocupado && gestionar) abrir(); });
     document.getElementById("cancelar").addEventListener("click", () => { if (!ocupado) cerrar(); });
     document.getElementById("busqueda").addEventListener("submit", evento => { evento.preventDefault(); listar(); });
+    document.getElementById("filtroEstado").addEventListener("change", listar);
     formulario.addEventListener("submit", evento => {
         evento.preventDefault();
         operar(async () => {
             if (!gestionar) return;
             const datos = Object.fromEntries(new FormData(formulario));
-            if (datos.estado === "INACTIVO" && estadoInicial !== "INACTIVO" && !confirm("?Desea inactivar este empleado? Su cuenta y sus asignaciones no se modifican.")) return;
+            if (datos.estado === "INACTIVO" && estadoInicial !== "INACTIVO" && !confirm("¿Desea dar de baja este empleado? Sus asignaciones activas también pasarán a INACTIVO. Su cuenta de usuario no se modificará.")) return;
             if (idActual !== null) datos.id = idActual;
             const resultado = await solicitar(idActual === null ? "crear" : "editar", datos);
             cerrar();
-            informar(resultado.mensaje);
+            informar([resultado.mensaje, resultado.advertencia].filter(Boolean).join(' '));
             await listar();
         });
     });

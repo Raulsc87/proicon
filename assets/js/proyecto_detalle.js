@@ -9,18 +9,37 @@
     let empleadoId = null, presupuestoId = null, presupuestoEditarId = null, detalleId = null, catalogos, presupuestos = [];
     const leer = (accion, extra = {}) => api(accion, null, {id_proyecto: pid, ...extra});
     const guardar = (accion, datos) => api(accion, {...datos, id_proyecto: pid});
+    let empleadosAsignados = [];
+    function opcionesEmpleados(actual = null) {
+        opciones('id_empleado', catalogos.empleados.filter(e => e.estado === 'ACTIVO' || String(e.id_empleado) === String(actual?.id_empleado)), 'id_empleado', 'nombre');
+        [...el('id_empleado').options].forEach(o => { o.disabled = empleadosAsignados.some(e => String(e.id_empleado) === o.value) && o.value !== String(actual?.id_empleado); });
+    }
+    function actualizarFuncion() {
+        const otro = el('funcion_en_proyecto').value === 'Otro';
+        el('funcionOtraGrupo').hidden = !otro;
+        el('funcionOtra').disabled = !otro;
+        el('funcionOtra').required = otro;
+        el('funcionOtra').setCustomValidity(otro && (!el('funcionOtra').value.trim() || /^otro$/i.test(el('funcionOtra').value.trim())) ? 'Especifica la función del empleado.' : '');
+    }
+    el('funcion_en_proyecto').addEventListener('change', actualizarFuncion);
+    el('funcionOtra').addEventListener('input', actualizarFuncion);
     function abrirEmpleado(r = null) {
         empleadoId = r?.id_empleado ?? null;
+        opcionesEmpleados(r);
         el('empleadoTitulo').textContent = r ? 'Editar asignación y estado' : 'Asignar empleado';
         abrir('empleado', r ? {...r, estado_empleado: r.estado} : {fecha_asignacion: hoy(), estado_empleado: 'ACTIVO'});
         el('id_empleado').disabled = Boolean(r);
+        const funcion = r?.funcion_en_proyecto ?? '';
+        const conocida = [...el('funcion_en_proyecto').options].some(o => o.value !== 'Otro' && o.value === funcion);
+        el('funcion_en_proyecto').value = conocida ? funcion : 'Otro';
+        el('funcionOtra').value = conocida ? '' : funcion;
+        actualizarFuncion();
     }
     async function cargarEmpleados() {
         const r = await leer('empleados_listar');
-        tabla('empleados', r, ['nombre', 'telefono', 'funcion_en_proyecto', 'fecha_asignacion', 'estado'], e => [['Editar / estado', () => abrirEmpleado(e)]]);
-        // Disponibles activos; conserva las personas de asignaciones históricas para editar.
-        opciones('id_empleado', catalogos.empleados.filter(e => e.estado === 'ACTIVO' || r.some(a => a.id_empleado === e.id_empleado)), 'id_empleado', 'nombre');
-        [...el('id_empleado').options].forEach(o => { o.disabled = r.some(e => String(e.id_empleado) === o.value); });
+        tabla('empleados', r, ['nombre', 'telefono', 'funcion_en_proyecto', 'fecha_asignacion', 'estado_global_empleado', 'estado'], e => [['Editar / estado', () => abrirEmpleado(e)]]);
+        empleadosAsignados = r;
+        opcionesEmpleados();
     }
     async function cargarPresupuestos() {
         presupuestos = await leer('presupuestos_listar');
@@ -55,6 +74,10 @@
     });
     el('agregarDetalle').addEventListener('click', () => abrirDetalle());
     enviar('empleado', async d => {
+        if (d.funcion_en_proyecto === 'Otro') {
+            d.funcion_en_proyecto = el('funcionOtra').value.trim();
+            if (!d.funcion_en_proyecto || /^otro$/i.test(d.funcion_en_proyecto)) throw new Error('Especifica la función del empleado.');
+        }
         await guardar(empleadoId ? 'empleados_editar' : 'empleados_crear', {...d, id_empleado: empleadoId ?? d.id_empleado, estado: d.estado_empleado});
         el('empleadoEditor').hidden = true; informar('Asignación guardada.'); await cargarEmpleados();
     });

@@ -2,3 +2,6 @@
 .empleados td { overflow-wrap: normal; word-break: normal; }
 .empleados td:nth-child(3), .empleados td:nth-child(4) { white-space: nowrap; }
 .empleados .acciones { min-width: 250px; }
+.empleados .dar-baja { background: var(--proicon-rojo); color: white; }
+.empleados .dar-baja:hover { background: #8e1d23; }
+.empleados .busqueda select { width: auto; }
