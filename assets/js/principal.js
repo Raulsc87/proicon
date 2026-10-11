@@ -3,7 +3,7 @@ const botonCerrarSesion = document.getElementById("botonCerrarSesion");
 const Autorizacion = (() => {
     let permisos = new Set();
     const modulos = {
-        'usuarios.html': 'USUARIOS',
+        'usuarios.html': 'USUARIOS', 'empleados.html': 'EMPLEADOS',
         'clientes.html': 'CLIENTES', 'proveedores.html': 'PROVEEDORES', 'materiales.html': 'MATERIALES',
         'proyectos.html': 'PROYECTOS', 'proyecto_detalle.html': 'PROYECTOS',
         'presupuestos_resumen.html': 'PRESUPUESTOS', 'empleados_proyectos.html': 'EMPLEADOS_PROYECTO',
@@ -19,6 +19,11 @@ const Autorizacion = (() => {
     function aplicar(usuario) {
         permisos = new Set(usuario.permisos || []);
         const nav = document.querySelector('.menu nav');
+        if (nav && puede('VER_EMPLEADOS') && !nav.querySelector('[href="empleados.html"]')) {
+            const enlace = document.createElement('a'); enlace.href = 'empleados.html'; enlace.textContent = 'Empleados';
+            if (location.pathname.endsWith('/empleados.html')) enlace.setAttribute('aria-current', 'page');
+            nav.append(enlace);
+        }
         if (nav && puede('VER_USUARIOS') && !nav.querySelector('[href="usuarios.html"]')) {
             const enlace = document.createElement('a'); enlace.href = 'usuarios.html'; enlace.textContent = 'Usuarios';
             if (location.pathname.endsWith('/usuarios.html')) enlace.setAttribute('aria-current', 'page');

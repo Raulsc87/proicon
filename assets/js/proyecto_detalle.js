@@ -18,7 +18,8 @@
     async function cargarEmpleados() {
         const r = await leer('empleados_listar');
         tabla('empleados', r, ['nombre', 'telefono', 'funcion_en_proyecto', 'fecha_asignacion', 'estado'], e => [['Editar / estado', () => abrirEmpleado(e)]]);
-        opciones('id_empleado', catalogos.empleados, 'id_empleado', 'nombre');
+        // Disponibles activos; conserva las personas de asignaciones históricas para editar.
+        opciones('id_empleado', catalogos.empleados.filter(e => e.estado === 'ACTIVO' || r.some(a => a.id_empleado === e.id_empleado)), 'id_empleado', 'nombre');
         [...el('id_empleado').options].forEach(o => { o.disabled = r.some(e => String(e.id_empleado) === o.value); });
     }
     async function cargarPresupuestos() {
