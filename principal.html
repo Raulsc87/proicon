@@ -7,6 +7,7 @@
 
     <link rel="stylesheet" href="assets/css/estilos.css">
     <link rel="stylesheet" href="assets/css/corporativo.css">
+    <link rel="stylesheet" href="assets/css/dashboard.css">
 </head>
 <body class="body-dashboard">
 
@@ -41,6 +42,26 @@
                 Sistema de gestión de proyectos de construcción
             </p>
 
+            <section class="dashboard-datos mantenimiento" aria-label="Indicadores del panel" aria-busy="true" id="dashboardDatos">
+                <div class="barra-dashboard"><p id="dashboardFecha" class="subtitulo">Indicadores de PROICON</p><button id="actualizarDashboard" type="button">Actualizar indicadores</button></div>
+                <p id="dashboardMensaje" class="mensaje" role="status" aria-live="polite">Cargando indicadores…</p>
+                <div class="indicadores-dashboard">
+                    <article class="indicador-dashboard"><h2>Proyectos activos</h2><strong id="indicadorProyectos">—</strong><p>En proceso</p></article>
+                    <article class="indicador-dashboard"><h2>Clientes</h2><strong id="indicadorClientes">—</strong><p>Total registrado</p></article>
+                    <article class="indicador-dashboard"><h2>Empleados activos</h2><strong id="indicadorEmpleados">—</strong><p>Personal de PROICON</p></article>
+                    <article class="indicador-dashboard"><h2>Presupuestado</h2><strong id="indicadorPresupuesto">—</strong><p>Última versión aprobada por proyecto</p></article>
+                </div>
+                <p id="notaPresupuesto" class="nota-dashboard"></p>
+                <section class="panel-mantenimiento"><div class="barra-dashboard"><h2>Avance general</h2><strong id="avanceGeneralTexto">—</strong></div><progress id="avanceGeneral" max="100" aria-label="Avance general de proyectos activos"></progress><p id="avanceGeneralNota" class="nota-dashboard">Promedio de actividades finalizadas en proyectos activos.</p></section>
+                <section id="riesgosDashboard" class="panel-mantenimiento" hidden><h2>Proyectos que requieren atención</h2><ul id="listaRiesgos" class="riesgos-dashboard"></ul><p id="notaRiesgos" class="nota-dashboard"></p></section>
+                <section id="estadoProyectosDashboard" class="panel-mantenimiento" hidden>
+                    <div class="barra-dashboard"><h2>Estado de proyectos</h2><a href="proyectos.html" data-permiso="VER_PROYECTOS">Ver todos los proyectos</a></div>
+                    <p class="nota-dashboard">Semáforo automático por actividades finalizadas y calendario. Se calcula al actualizar este panel; no utiliza el estado de avance registrado manualmente.</p>
+                    <div class="tabla-contenedor"><table><caption class="solo-lectores">Avance real, esperado y semáforo automático por proyecto</caption><thead><tr><th>Proyecto</th><th>Avance</th><th>Esperado</th><th>Semáforo</th></tr></thead><tbody id="filasDashboard"></tbody></table></div>
+                    <p id="notaProyectos" class="nota-dashboard"></p>
+                </section>
+            </section>
+            <h2 class="titulo-accesos">Accesos a módulos</h2>
             <div class="tarjetas">
 
                 <a class="tarjeta" href="clientes.html">
@@ -80,6 +101,7 @@
     </div>
 
     <script src="assets/js/principal.js"></script>
+    <script src="assets/js/dashboard.js"></script>
 
     <script src="assets/js/presentacion.js"></script>
 </body>

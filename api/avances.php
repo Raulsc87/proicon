@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/proyectos_base.php';
+require_once __DIR__ . '/indicadores_proyecto.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 $usuario = requerir_sesion()['id_usuario'];
@@ -80,7 +81,7 @@ try {
         $db->beginTransaction();
         proyecto_query($db, 'SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
         $r = ['actividades' => proyecto_query($db, $sql . ' ORDER BY a.id_actividad', ['pid' => $pid])->fetchAll(PDO::FETCH_ASSOC),
-            'resumen' => proyecto_query($db, "SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE estado = 'FINALIZADO') AS finalizadas, ROUND(100.0 * COUNT(*) FILTER (WHERE estado = 'FINALIZADO') / NULLIF(COUNT(*), 0), 1) AS porcentaje FROM actividad WHERE id_proyecto = :id", ['id' => $pid])->fetch(PDO::FETCH_ASSOC),
+            'resumen' => proyecto_query($db, 'SELECT '.actividades_resumen_sql().' FROM actividad WHERE id_proyecto = :id', ['id' => $pid])->fetch(PDO::FETCH_ASSOC),
             'estado_avance' => $p['estado_avance'],
             'estados' => proyecto_estados($db, 'actividad'),
             'situaciones' => proyecto_estados($db, 'actividad', 'situacion_tiempo'),
